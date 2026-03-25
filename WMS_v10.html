@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<title>SmartWMS v6</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<style>
+:root{
+  --bg:oklch(12% .012 255);--s1:oklch(16% .014 255);--s2:oklch(20% .015 255);--s3:oklch(25% .017 255);
+  --border:oklch(30% .018 255);--bd2:oklch(26% .015 255);
+  --text:oklch(90% .008 255);--muted:oklch(55% .022 255);--dim:oklch(36% .018 255);
+  --accent:oklch(72% .14 68);--accent-bg:oklch(72% .14 68/.12);--accent-bd:oklch(72% .14 68/.32);
+  --za:oklch(63% .19 22);--za-bg:oklch(63% .19 22/.1);--za-bd:oklch(63% .19 22/.28);
+  --zb:oklch(72% .14 68);--zb-bg:oklch(72% .14 68/.1);--zb-bd:oklch(72% .14 68/.28);
+  --zc:oklch(65% .13 248);--zc-bg:oklch(65% .13 248/.1);--zc-bd:oklch(65% .13 248/.28);
+  --green:oklch(68% .16 148);--grn-bg:oklch(68% .16 148/.1);--grn-bd:oklch(68% .16 148/.28);
+  --fn:'DM Sans',system-ui,sans-serif;--mono:'JetBrains Mono','Courier New',monospace;--r:6px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--fn);background:var(--bg);color:var(--text);height:100vh;display:flex;overflow:hidden;font-size:13px;line-height:1.5}
+b{font-weight:600}
+.sb{width:200px;background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.sb-head{padding:18px 16px 14px;border-bottom:1px solid var(--border)}
+.sb-wm{font-size:16px;font-weight:600;letter-spacing:-.02em}.sb-wm span{color:var(--accent)}
+.sb-sub{font-size:9px;color:var(--muted);font-family:var(--mono);margin-top:2px;letter-spacing:.04em}
+.sb-nav{flex:1;padding:10px 8px;overflow-y:auto}
+.nl{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);padding:0 8px;margin:12px 0 2px;font-weight:500}
+.nl:first-child{margin-top:0}
+.ni{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r);cursor:pointer;color:var(--muted);font-size:13px;font-weight:500;transition:all .15s;border-left:2px solid transparent;user-select:none}
+.ni:hover{color:var(--text);background:var(--s2)}.ni.active{color:var(--text);background:var(--s2);border-left-color:var(--accent)}
+.ni-g{width:15px;text-align:center;flex-shrink:0;font-size:12px;opacity:.65}.ni.active .ni-g{opacity:1;color:var(--accent)}
+.ni-badge{margin-left:auto;background:var(--za-bg);color:var(--za);border:1px solid var(--za-bd);border-radius:10px;padding:0 6px;font-size:9px;font-family:var(--mono);display:none}
+.sb-status{padding:10px 14px;border-top:1px solid var(--border);font-family:var(--mono);font-size:9px;color:var(--dim);line-height:1.6}
+.live-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--green);margin-right:5px;animation:pulse 2.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.ct{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.tb{height:52px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 18px;gap:0;flex-shrink:0;z-index:100}
+.tb-page{font-size:14px;font-weight:600}.tb-sep{width:1px;height:18px;background:var(--border);margin:0 14px}.tb-sub{font-size:11px;color:var(--muted)}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:0}
+.stat-item{display:flex;flex-direction:column;align-items:flex-end;padding:0 11px;border-right:1px solid var(--border)}
+.stat-item:first-child{border-left:1px solid var(--border)}
+.stat-val{font-family:var(--mono);font-size:14px;font-weight:600;line-height:1.1}.stat-lbl{font-size:8px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.tb-clock{padding-left:11px;text-align:right}.tb-time{font-family:var(--mono);font-size:13px}.tb-date{font-family:var(--mono);font-size:9px;color:var(--muted)}
+.fs-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:4px 9px;border-radius:var(--r);font-size:10px;font-family:var(--mono);cursor:pointer;transition:all .15s;margin-left:10px}
+.fs-btn:hover{border-color:var(--muted);color:var(--text)}
+.alert-banner{position:fixed;top:52px;left:200px;right:0;z-index:200;background:oklch(42% .12 50);border-bottom:1px solid oklch(55% .14 50);padding:7px 18px;display:none;align-items:center;gap:10px;font-family:var(--mono);font-size:11px;font-weight:600;color:oklch(96% .04 50)}
+.alert-banner.show{display:flex}.ab-dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 1s infinite;flex-shrink:0}
+.ab-x{margin-left:auto;background:none;border:none;color:inherit;cursor:pointer;font-size:14px;opacity:.7}.ab-x:hover{opacity:1}
+.ms{flex:1;overflow-y:auto;padding:14px 18px}
+.pg{display:none}.pg.active{display:block}
+.panel{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.ph{padding:8px 12px;border-bottom:1px solid var(--border);font-size:9px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:500;display:flex;align-items:center;gap:7px;background:var(--s2)}
+
+/* ── DASHBOARD ── */
+.dash-kpi{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:10px}
+.kcard{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:9px 12px;position:relative;overflow:hidden}
+.kcard::after{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kc-a::after{background:var(--za)}.kc-b::after{background:var(--zb)}.kc-c::after{background:var(--zc)}.kc-g::after{background:var(--green)}.kc-m::after{background:var(--muted)}
+.kc-l{font-size:8px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:500;margin-bottom:2px}
+.kc-v{font-family:var(--mono);font-size:22px;font-weight:700;line-height:1}
+.kc-s{font-size:9px;color:var(--dim);font-family:var(--mono);margin-top:2px}
+.dash-main{display:grid;grid-template-columns:1fr 1fr 256px;gap:9px}
+.dash-col{display:flex;flex-direction:column;gap:8px}
+.chart-box{padding:10px 12px}
+canvas{display:block;width:100%!important}
+
+/* Robot/Conveyor status row */
+.rr{display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid var(--bd2)}.rr:last-child{border:none}
+.rr-ic{width:24px;height:24px;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;font-weight:700}
+.rr-info{flex:1;min-width:0}.rr-name{font-size:11px;font-weight:500}.rr-task{font-size:9px;color:var(--muted);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rr-pb{width:40px;flex-shrink:0}.pb{height:2px;background:var(--s3);border-radius:1px;overflow:hidden}.pbf{height:100%;border-radius:1px;transition:width .5s ease}
+.rsd{width:6px;height:6px;border-radius:50%;flex-shrink:0}.rsd-idle{background:var(--zb)}.rsd-on{background:var(--green);animation:pulse 1.4s infinite}
+.log-entry{display:flex;gap:6px;padding:3px 0;border-bottom:1px solid var(--bd2);font-family:var(--mono);font-size:9px}.log-entry:last-child{border:none}
+.le-t{color:var(--dim);white-space:nowrap;min-width:30px}.le-i{width:9px;flex-shrink:0;text-align:center}.le-m{color:var(--text);line-height:1.4}
+.rs-hd{padding:7px 12px;font-size:9px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:500;display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--bd2);background:var(--s2)}
+.rs-badge{background:var(--s3);color:var(--dim);border-radius:3px;padding:0 5px;font-size:8px;font-family:var(--mono);margin-left:auto}
+.or-row{padding:5px 0;border-bottom:1px solid var(--bd2);font-size:11px}.or-row:last-child{border:none}
+.or-top{display:flex;justify-content:space-between;align-items:center}.or-id{font-family:var(--mono);font-weight:600;font-size:11px}
+.or-st{font-size:8px;font-family:var(--mono);padding:1px 5px;border-radius:2px}
+.st-rcv{background:var(--zb-bg);color:var(--zb)}.st-pck{background:var(--za-bg);color:var(--za)}.st-dsp{background:var(--grn-bg);color:var(--green)}
+.or-d{font-size:10px;color:var(--muted);margin-top:1px}
+
+/* ── STRAIGHT RACK VIEW (20 rows, single column) ── */
+.straight-rack-wrap{display:flex;flex-direction:column;gap:0;max-width:100%}
+.rack-row{display:flex;flex-direction:row;align-items:stretch;border-bottom:1px solid var(--border);min-height:52px}
+.rack-row.zone-a{background:rgba(220,80,60,.04)}
+.rack-row.zone-b{background:rgba(200,140,40,.03)}
+.rack-row.zone-c{background:rgba(60,130,220,.03)}
+.rack-id{width:48px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;font-weight:600;color:var(--dim);border-right:1px solid var(--bd2);background:var(--s2);gap:2px}
+.rack-id .rack-zone-tag{font-size:7px;padding:1px 4px;border-radius:2px;font-weight:700}
+.rack-levels{flex:1;display:flex;flex-direction:column}
+.rack-level{display:flex;align-items:center;gap:4px;padding:3px 8px;border-bottom:1px solid var(--bd2)}
+.rack-level:last-child{border:none}
+.lv-tag{font-family:var(--mono);font-size:8px;font-weight:600;width:14px;text-align:center;flex-shrink:0;color:var(--dim)}
+.lv-tag.l2{color:var(--muted)}
+.sku-lbl{font-family:var(--mono);font-size:8px;width:28px;flex-shrink:0;color:var(--dim)}
+.rack-slots{display:flex;gap:2px}
+.rsl{width:18px;height:18px;border-radius:2px;border:1px solid var(--bd2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:6px;font-weight:600;cursor:pointer;transition:transform .1s;position:relative}
+.rsl:hover{transform:scale(1.3);z-index:20;box-shadow:0 0 0 1px var(--accent)}
+.rsl.emp{background:var(--bg);border-color:var(--bd2);color:transparent}
+.rsl.sa{background:rgba(220,80,60,.15);border-color:rgba(220,80,60,.4);color:rgba(220,80,60,.9)}
+.rsl.sb{background:rgba(200,140,40,.15);border-color:rgba(200,140,40,.4);color:rgba(200,140,40,.9)}
+.rsl.sc{background:rgba(60,130,220,.15);border-color:rgba(60,130,220,.4);color:rgba(60,130,220,.9)}
+.rsl.bl{animation:slb .55s ease-in-out infinite}
+@keyframes slb{0%,100%{opacity:1}50%{opacity:.2}}
+.rsl.sel-out{border-color:var(--accent)!important;background:var(--accent-bg)!important}
+.front-lbl{font-family:var(--mono);font-size:7px;color:var(--dim);padding:0 2px}
+.dock-bar{background:var(--grn-bg);border:1px solid var(--grn-bd);border-radius:var(--r);padding:5px 12px;text-align:center;font-family:var(--mono);font-size:9px;color:var(--green);letter-spacing:.05em;margin-bottom:8px}
+.dock-bar.exit-bar{background:var(--za-bg);border:1px solid var(--za-bd);color:var(--za);margin-top:8px;margin-bottom:0}
+.slot-detail-panel{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;position:sticky;top:0}
+.rack-detail-wrap{display:grid;grid-template-columns:1fr 250px;gap:10px;align-items:start}
+
+/* ── KANBAN ── */
+.kb-section-label{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600;padding:4px 0 6px;display:flex;align-items:center;gap:8px}
+.kb-section-label::before{content:'';flex:1;height:1px;background:var(--border)}
+.kb-section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.kb-inbound-label{color:var(--zc)}
+.kb-outbound-label{color:var(--accent)}
+.kb-board-wrap{display:flex;flex-direction:column;gap:6px;height:calc(100vh - 160px)}
+.kb-board{display:grid;gap:7px}
+.kb-board-in{grid-template-columns:repeat(3,1fr)}
+.kb-board-out{grid-template-columns:repeat(3,1fr)}
+.kb-col{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.kb-col-hd{padding:7px 9px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:5px;background:var(--s2);flex-shrink:0}
+.kb-stage-name{font-size:10px;font-weight:600}.kb-cnt{margin-left:auto;font-family:var(--mono);font-size:9px;background:var(--s3);color:var(--muted);padding:0 5px;border-radius:3px}
+.kb-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.kb-cards{flex:1;overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:5px}
+.kb-card{background:var(--s2);border:1px solid var(--border);border-radius:4px;padding:7px 8px;cursor:pointer;transition:border-color .15s;position:relative}
+.kb-card:hover{border-color:var(--muted)}.kb-card.incident{border-color:var(--za-bd);background:var(--za-bg)}
+.kc-id{font-family:var(--mono);font-size:10px;font-weight:700;margin-bottom:2px}.kc-sku{font-size:9px;color:var(--muted);font-family:var(--mono)}
+.kc-ts{font-size:8px;color:var(--dim);font-family:var(--mono);margin-top:3px}.kc-qty{font-family:var(--mono);font-size:9px;color:var(--accent);margin-top:2px}
+.kb-scan-badge{position:absolute;top:5px;right:6px;font-size:8px;color:var(--dim);font-family:var(--mono)}
+.sd-rcv{background:var(--zc)}.sd-qc{background:var(--zb)}.sd-str{background:rgba(50,180,120,.8)}.sd-pck{background:var(--accent)}.sd-pak{background:rgba(140,100,220,.8)}.sd-dsp{background:var(--muted)}
+.kb-dir-badge{font-size:7px;font-family:var(--mono);padding:1px 5px;border-radius:2px;margin-top:3px;display:inline-block}
+.kb-dir-in{background:var(--zc-bg);color:var(--zc);border:1px solid var(--zc-bd)}
+.kb-dir-out{background:var(--za-bg);color:var(--za);border:1px solid var(--za-bd)}
+
+/* ── RECEIVING PAGE ── */
+.rcv-grid{display:grid;grid-template-columns:340px 1fr;gap:12px}
+.manifest-item{display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid var(--bd2);font-size:11px}.manifest-item:last-child{border:none}
+.mi-sku{font-family:var(--mono);font-weight:700;width:44px;flex-shrink:0}
+.mi-prog{flex:1;min-width:0}
+.mi-bar{height:4px;background:var(--s3);border-radius:2px;overflow:hidden;margin-top:2px}
+.mi-fill{height:100%;border-radius:2px;transition:width .4s ease}
+.mi-lbl{font-size:9px;font-family:var(--mono);color:var(--muted)}
+.mi-actions{display:flex;gap:4px;flex-shrink:0}
+.scan-row{display:flex;gap:8px;margin-bottom:10px;align-items:center}
+.rcv-log{max-height:260px;overflow-y:auto}
+.rcv-entry{display:flex;gap:7px;align-items:flex-start;padding:5px 0;border-bottom:1px solid var(--bd2);font-size:11px}.rcv-entry:last-child{border:none}
+.re-ic{width:22px;height:22px;border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px}
+.rei-ok{background:var(--grn-bg);border:1px solid var(--grn-bd)}.rei-rej{background:var(--za-bg);border:1px solid var(--za-bd)}.rei-ret{background:var(--zc-bg);border:1px solid var(--zc-bd)}
+.re-body{flex:1;min-width:0}.re-title{font-family:var(--mono);font-weight:600}.re-d{font-size:9px;color:var(--muted);font-family:var(--mono)}
+.delivery-card{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;margin-bottom:6px;cursor:pointer;transition:border-color .15s}
+.delivery-card:hover{border-color:var(--muted)}.delivery-card.active-dlv{border-color:var(--accent-bd);background:var(--accent-bg)}
+.dlv-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+.dlv-id{font-family:var(--mono);font-weight:700;font-size:11px}
+.dlv-st{font-size:8px;font-family:var(--mono);padding:1px 6px;border-radius:2px}
+.ds-pending{background:var(--zb-bg);color:var(--zb)}.ds-active{background:var(--za-bg);color:var(--za)}.ds-done{background:var(--grn-bg);color:var(--green)}
+.dlv-d{font-size:9px;color:var(--muted);font-family:var(--mono)}
+
+/* ── FORMS ── */
+.form-block{margin-bottom:10px}
+.form-lbl{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:500;margin-bottom:4px}
+.fi,.fsel{width:100%;background:var(--s2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:var(--r);font-family:var(--mono);font-size:12px;outline:none;transition:border-color .15s}
+.fi:focus,.fsel:focus{border-color:var(--accent)}
+.fsel{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%234e7090'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;cursor:pointer}
+.fsel option{background:var(--s2)}
+.fi-row{display:flex;gap:6px}.fi-row .fi{flex:1}
+textarea.fi{resize:vertical;min-height:60px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 14px;border:none;border-radius:var(--r);font-family:var(--fn);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn:disabled{opacity:.4;cursor:not-allowed}.btn-full{width:100%}
+.btn-primary{background:var(--accent);color:oklch(15% .012 68)}.btn-primary:hover:not(:disabled){background:oklch(66% .15 68)}
+.btn-success{background:var(--green);color:oklch(15% .01 148)}.btn-success:hover:not(:disabled){background:oklch(62% .17 148)}
+.btn-danger{background:var(--za);color:oklch(14% .01 22)}.btn-danger:hover{background:oklch(56% .2 22)}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}.btn-ghost:hover{border-color:var(--muted);color:var(--text)}
+.btn-sm{padding:4px 8px;font-size:10px}
+.btn-scan{background:var(--s2);border:1px solid var(--border);color:var(--muted);padding:7px 10px;border-radius:var(--r);font-size:10px;font-family:var(--mono);cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-scan:hover{border-color:var(--accent);color:var(--accent)}
+.bdg{display:inline-block;padding:1px 7px;border-radius:3px;font-size:9px;font-weight:600;font-family:var(--mono)}
+.bdg-A{background:var(--za-bg);color:var(--za);border:1px solid var(--za-bd)}.bdg-B{background:var(--zb-bg);color:var(--zb);border:1px solid var(--zb-bd)}.bdg-C{background:var(--zc-bg);color:var(--zc);border:1px solid var(--zc-bd)}
+.bdg-ok{background:var(--grn-bg);color:var(--green);border:1px solid var(--grn-bd)}.bdg-warn{background:var(--za-bg);color:var(--za);border:1px solid var(--za-bd)}.bdg-off{background:var(--s3);color:var(--dim);border:1px solid var(--border)}
+.info-surface{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.info-surface.is-suc{border-color:var(--grn-bd);background:var(--grn-bg)}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:5px 10px;border-bottom:1px solid var(--bd2);font-size:11px}.info-row:last-child{border:none}
+.info-key{color:var(--muted);font-family:var(--mono);font-size:10px}.info-val{font-family:var(--mono);font-weight:600;font-size:11px}
+.slot-callout{font-family:var(--mono);font-size:26px;font-weight:700;text-align:center;padding:12px;color:var(--green);letter-spacing:.06em;background:var(--bg);border-bottom:1px solid var(--grn-bd)}
+.tip{font-size:10px;color:var(--muted);font-family:var(--mono);line-height:1.55;padding:8px 10px;background:var(--s2);border-radius:var(--r);border-left:2px solid var(--accent);margin-bottom:12px}
+.done-state{text-align:center;padding:26px 0}.done-state .d-ic{font-size:32px;margin-bottom:8px}.done-state .d-t{font-size:15px;font-weight:600;color:var(--green);margin-bottom:3px}.done-state .d-s{font-size:10px;color:var(--muted);font-family:var(--mono)}
+.pg2{display:grid;grid-template-columns:380px 1fr;gap:12px}
+.out-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.out-tabs{display:flex;border-bottom:1px solid var(--border)}
+.out-tab{flex:1;padding:8px;background:transparent;border:none;color:var(--muted);font-family:var(--mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.out-tab:hover{color:var(--text)}.out-tab.active{color:var(--text);border-bottom-color:var(--accent)}
+/* Visual Pick — rack selector */
+.vpick-rack-sel{padding:8px 12px}
+.vpick-rack-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--r);cursor:pointer;border:1px solid var(--border);background:var(--s2);margin-bottom:5px;transition:border-color .15s}
+.vpick-rack-item:hover{border-color:var(--muted)}.vpick-rack-item.selected{border-color:var(--accent);background:var(--accent-bg)}
+.vpick-rack-info{flex:1;min-width:0}
+.vpick-rack-name{font-family:var(--mono);font-size:11px;font-weight:600}
+.vpick-rack-detail{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:1px}
+.vpick-rack-stock{font-family:var(--mono);font-size:11px;font-weight:600}
+.vpick-cart{border-top:1px solid var(--border);padding:8px 12px;background:var(--s2)}
+.vpick-item{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--bd2);font-size:11px;font-family:var(--mono)}.vpick-item:last-child{border:none}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{padding:6px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:500;white-space:nowrap}
+td{padding:5px 10px;border-bottom:1px solid var(--bd2);font-family:var(--mono);font-size:11px}
+tr:last-child td{border:none}tr:hover td{background:var(--s2)}
+.tbl-scroll{max-height:calc(100vh - 180px);overflow-y:auto}
+.inv-filters{display:flex;gap:6px;margin-bottom:10px;align-items:center;flex-wrap:wrap}
+.inv-filters .fsel{width:auto;min-width:130px}
+.inc-grid{display:grid;grid-template-columns:380px 1fr;gap:12px}
+.inc-type{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.itype-btn{background:var(--s2);border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:var(--r);font-size:11px;cursor:pointer;transition:all .15s;font-weight:500}
+.itype-btn:hover{border-color:var(--muted);color:var(--text)}
+.sel-dmg{border-color:var(--za-bd)!important;background:var(--za-bg)!important;color:var(--za)!important}
+.sel-lst{border-color:var(--zb-bd)!important;background:var(--zb-bg)!important;color:var(--zb)!important}
+.sel-wrg{border-color:var(--zc-bd)!important;background:var(--zc-bg)!important;color:var(--zc)!important}
+.sel-oth{border-color:var(--grn-bd)!important;background:var(--grn-bg)!important;color:var(--green)!important}
+.inc-row{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--bd2)}.inc-row:last-child{border:none}
+.inc-icon{width:28px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.ii-dmg{background:var(--za-bg);border:1px solid var(--za-bd)}.ii-lst{background:var(--zb-bg);border:1px solid var(--zb-bd)}.ii-wrg{background:var(--zc-bg);border:1px solid var(--zc-bd)}.ii-oth{background:var(--grn-bg);border:1px solid var(--grn-bd)}
+.inc-body{flex:1;min-width:0}.inc-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+.inc-id{font-family:var(--mono);font-size:11px;font-weight:700}.inc-ts{font-size:9px;color:var(--dim);font-family:var(--mono)}
+.inc-detail{font-size:10px;color:var(--muted)}.inc-note{font-size:10px;color:var(--text);margin-top:2px;font-style:italic}
+.inc-removed{font-size:8px;color:var(--za);font-family:var(--mono);margin-top:2px}
+.toast{position:fixed;top:58px;right:16px;z-index:1000;background:var(--za);color:oklch(15% .01 22);padding:8px 14px;border-radius:var(--r);font-family:var(--mono);font-size:11px;font-weight:600;display:none;max-width:420px;animation:toast-in .2s cubic-bezier(.16,1,.3,1)}
+@keyframes toast-in{from{transform:translateX(12px);opacity:0}}
+.toast.ok{background:var(--green);color:oklch(14% .01 148)}
+.modal-overlay{position:fixed;inset:0;background:oklch(0% 0 0/.8);z-index:500;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:18px;width:440px;max-width:95vw}
+.modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.modal-title{font-size:14px;font-weight:600}
+.modal-close{background:transparent;border:1px solid var(--border);color:var(--muted);width:26px;height:26px;border-radius:4px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{color:var(--text);border-color:var(--muted)}
+.cam-viewport{position:relative;width:100%;aspect-ratio:4/3;background:#000;border-radius:6px;overflow:hidden;margin-bottom:10px}
+#cam-video{width:100%;height:100%;object-fit:cover}
+.cam-reticle{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.cam-reticle::before{content:'';width:180px;height:110px;border:2px solid var(--accent);border-radius:5px;opacity:.8}
+.cam-status{font-family:var(--mono);font-size:10px;color:var(--muted);text-align:center;padding:4px 0}
+.cam-status.found{color:var(--green)}.cam-status.err{color:var(--za)}
+.cam-chip{cursor:pointer;background:var(--s2);border:1px solid var(--border);border-radius:4px;padding:4px 9px;font-family:var(--mono);font-size:10px;transition:border-color .12s}
+.kb-scan-info{background:var(--s2);border-radius:var(--r);padding:10px 12px;margin-bottom:12px;font-family:var(--mono);font-size:11px}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+
+<aside class="sb">
+  <div class="sb-head">
+    <div class="sb-wm">Smart<span>WMS</span></div>
+    <div class="sb-sub">WAREHOUSE MGMT v6.0</div>
+  </div>
+  <nav class="sb-nav">
+    <div class="nl">Overview</div>
+    <div class="ni active" onclick="goPage('dashboard')" id="nav-dashboard"><span class="ni-g">◈</span>Dashboard</div>
+    <div class="ni" onclick="goPage('rackview')" id="nav-rackview"><span class="ni-g">⊞</span>Rack View</div>
+    <div class="nl">Operations</div>
+    <div class="ni" onclick="goPage('receiving')" id="nav-receiving"><span class="ni-g">🚛</span>Receiving<span class="ni-badge" id="rcv-badge">0</span></div>
+    <div class="ni" onclick="goPage('inbound')" id="nav-inbound"><span class="ni-g">↓</span>Inbound (Store)</div>
+    <div class="ni" onclick="goPage('outbound')" id="nav-outbound"><span class="ni-g">↑</span>Outbound<span class="ni-badge" id="ob-badge">0</span></div>
+    <div class="nl">Tracking</div>
+    <div class="ni" onclick="goPage('kanban')" id="nav-kanban"><span class="ni-g">⠿</span>Kanban</div>
+    <div class="ni" onclick="goPage('incidents')" id="nav-incidents"><span class="ni-g">⚠</span>Incidents<span class="ni-badge" id="inc-badge">0</span></div>
+    <div class="nl">Data</div>
+    <div class="ni" onclick="goPage('inventory')" id="nav-inventory"><span class="ni-g">≡</span>Inventory</div>
+  </nav>
+  <div class="sb-status"><span class="live-dot"></span>LIVE · Straight Belt Layout<br>20 Racks · Zone A near Exit<br>8 SKUs · Weight-based Levels</div>
+</aside>
+
+<div class="ct">
+  <header class="tb">
+    <div class="tb-page" id="ptitle">Dashboard</div>
+    <div class="tb-sep"></div>
+    <div class="tb-sub" id="psub">WMS overview</div>
+    <div class="tb-right">
+      <div class="stat-item"><div class="stat-val" id="kv1">40</div><div class="stat-lbl">Units in stock</div></div>
+      <div class="stat-item"><div class="stat-val" id="kv2">—</div><div class="stat-lbl">Utilisation</div></div>
+      <div class="stat-item"><div class="stat-val" id="kv3">0</div><div class="stat-lbl">Orders today</div></div>
+      <div class="stat-item"><div class="stat-val" id="kv4">0</div><div class="stat-lbl">Dispatched</div></div>
+      <div class="tb-clock"><div class="tb-time" id="clk">—</div><div class="tb-date" id="ckd">—</div></div>
+      <button class="fs-btn" onclick="toggleFS()">⛶ Fullscreen</button>
+    </div>
+  </header>
+  <div class="alert-banner" id="alert-banner"><div class="ab-dot"></div><span id="ab-msg"></span><button class="ab-x" onclick="dismissAlert()">✕</button></div>
+  <div class="ms" id="ms-area">
+
+    <!-- ══ DASHBOARD ══ -->
+    <div class="pg active" id="page-dashboard">
+      <div class="dash-kpi">
+        <div class="kcard kc-m"><div class="kc-l">Total Units</div><div class="kc-v" id="dk-total">40</div><div class="kc-s">8 SKUs · 3 zones</div></div>
+        <div class="kcard kc-a"><div class="kc-l">Slot Utilisation</div><div class="kc-v" id="dk-util">—</div><div class="kc-s" id="dk-util-s">— / 200 slots</div></div>
+        <div class="kcard kc-g"><div class="kc-l">Orders Today</div><div class="kc-v" id="dk-ord">0</div><div class="kc-s" id="dk-ord-s">0 dispatched</div></div>
+        <div class="kcard kc-b"><div class="kc-l">Kanban Active</div><div class="kc-v" id="dk-kb">0</div><div class="kc-s">in pipeline</div></div>
+        <div class="kcard kc-c"><div class="kc-l">QC Rejected</div><div class="kc-v" id="dk-qc">0</div><div class="kc-s">units rejected</div></div>
+      </div>
+      <div class="dash-main">
+        <div class="dash-col">
+          <div class="panel">
+            <div class="ph">Slot Utilisation</div>
+            <div class="chart-box" style="height:158px;display:flex;align-items:center;gap:12px">
+              <div style="width:128px;height:128px;flex-shrink:0"><canvas id="chart-donut"></canvas></div>
+              <div id="donut-legend" style="font-family:var(--mono);font-size:9px;line-height:2.1;min-width:0"></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="ph">SKU Stock Levels</div>
+            <div class="chart-box" style="height:158px"><canvas id="chart-sku-bar"></canvas></div>
+          </div>
+        </div>
+        <div class="dash-col">
+          <div class="panel">
+            <div class="ph">Warehouse Status</div>
+            <table>
+              <thead><tr><th>Metric</th><th style="text-align:right">Value</th><th style="text-align:right">Status</th></tr></thead>
+              <tbody>
+                <tr><td>Total Slots</td><td style="text-align:right;font-weight:600">200</td><td style="text-align:right"><span class="bdg bdg-ok">Normal</span></td></tr>
+                <tr><td>Occupied Slots</td><td style="text-align:right;font-weight:600" id="wst-occ">—</td><td style="text-align:right"><span class="bdg bdg-ok">OK</span></td></tr>
+                <tr><td>Empty Slots</td><td style="text-align:right;font-weight:600" id="wst-emp">—</td><td style="text-align:right"><span class="bdg bdg-ok">Available</span></td></tr>
+                <tr><td>QC Rejected Units</td><td style="text-align:right;font-weight:600" id="wst-qcr">0</td><td style="text-align:right" id="wst-qcr-s"><span class="bdg bdg-ok">Clear</span></td></tr>
+                <tr><td>QC Reject Rate</td><td style="text-align:right;font-weight:600" id="wst-qcpct">—</td><td style="text-align:right" id="wst-qcpct-s"><span class="bdg bdg-ok">Good</span></td></tr>
+                <tr><td>Open Incidents</td><td style="text-align:right;font-weight:600" id="wst-inc">0</td><td style="text-align:right" id="wst-inc-s"><span class="bdg bdg-ok">Clear</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="panel">
+            <div class="ph">Kanban Stage Distribution</div>
+            <div class="chart-box" style="height:150px"><canvas id="chart-kb-bar"></canvas></div>
+          </div>
+        </div>
+        <!-- Right: In + Out always visible + Log -->
+        <div class="panel" style="display:flex;flex-direction:column;overflow:hidden">
+          <div class="rs-hd" style="color:var(--zc)"><span style="width:6px;height:6px;border-radius:50%;background:var(--zc);display:inline-block;flex-shrink:0"></span>Inbound Queue</div>
+          <div id="feed-ib" style="padding:7px 10px;max-height:130px;overflow-y:auto;border-bottom:1px solid var(--border)">
+            <div style="color:var(--muted);font-family:var(--mono);font-size:10px;padding:8px 0;text-align:center">No active deliveries</div>
+          </div>
+          <div class="rs-hd" style="color:var(--accent)">Outbound Orders <span class="rs-badge" id="ocnt" style="margin-left:auto">0</span></div>
+          <div id="ofd" style="padding:7px 10px;max-height:130px;overflow-y:auto;border-bottom:1px solid var(--border)">
+            <div style="color:var(--muted);font-family:var(--mono);font-size:10px;padding:8px 0;text-align:center">No outbound orders yet</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden">
+            <div class="rs-hd">Activity Log</div>
+            <div style="padding:6px 10px;overflow-y:auto;flex:1" id="alog"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ RACK VIEW ══ -->
+    <div class="pg" id="page-rackview">
+      <div class="rack-detail-wrap" id="rack-detail-wrap">
+        <div>
+          <!-- Conveyor entry from top -->
+          <div class="dock-bar">⬇ สายพานขาเข้า (INBOUND CONVEYOR) — ของเข้าจากด้านบน · Zone C (Slow) อยู่บน · Zone A (Fast) อยู่ล่างใกล้ทางออก ⬇</div>
+          <div class="straight-rack-wrap" id="i-rack-wrap"><!-- rendered by JS --></div>
+          <!-- Exit at bottom -->
+          <div class="dock-bar exit-bar">⬆ ทางออก / LOADING DOCK (Outbound) — Zone A อยู่ใกล้จุดนี้ ⬆</div>
+        </div>
+        <div>
+          <div class="slot-detail-panel">
+            <div class="ph">Slot Detail</div>
+            <div style="padding:22px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:10px" id="sdp-empty">Click any slot to inspect</div>
+            <div id="sdp-content" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ RECEIVING ══ -->
+    <div class="pg" id="page-receiving">
+      <div class="rcv-grid">
+        <div style="flex:1">
+          <div class="panel">
+            <div class="ph">📋 Truck Schedule <span class="rs-badge" style="margin-left:auto" id="dlv-cnt">0</span></div>
+            <div style="padding:10px" id="dlv-list">
+              <div style="color:var(--muted);font-family:var(--mono);font-size:10px;padding:15px 0;text-align:center">ไม่มีรถบรรทุกที่นัดหมาย</div>
+            </div>
+            <div style="padding:10px;border-top:1px solid var(--border)">
+              <button class="btn btn-primary btn-full" onclick="openNewDelivery()">+ เพิ่มรถบรรทุก</button>
+            </div>
+          </div>
+        </div>
+        <div style="flex:1">
+          <div class="panel">
+            <div class="ph">✓ Confirm Arrival</div>
+            <div style="padding:12px 13px">
+              <div id="rcv-no-dlv" class="tip" style="text-align:center;padding:20px 0">เลือกรถบรรทุกจากรายการด้านซ้าย แล้วกดปุ่ม Confirm เมื่อรถมาถึง</div>
+              <div id="rcv-active" style="display:none">
+                <div style="margin-bottom:12px;padding:10px;background:var(--s2);border-radius:var(--r);border-left:3px solid var(--zb)" id="rcv-manifest-hd"></div>
+                <button class="btn btn-success btn-full" onclick="rcvConfirmArrival()" style="margin-bottom:8px">✓ Confirm Arrival (รถมาถึง)</button>
+                <button class="btn btn-ghost btn-full" onclick="rcvCancelDelivery()">✕ Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ INBOUND (Store to Rack) ══ -->
+    <div class="pg" id="page-inbound">
+      <div class="pg2">
+        <div>
+          <div class="panel">
+            <div class="ph">📥 Store to Rack (ขาเข้า)</div>
+            <div style="padding:12px 13px">
+              <div class="tip">
+                <b>วิธีใช้:</b><br>
+                1. QC ผ่านแล้ว → วางของบนสายพาน<br>
+                2. สแกน Barcode ของที่วางบนสายพาน<br>
+                3. ระบบจะรู้ว่าของชิ้นนี้อยู่บนสายพานแล้ว<br>
+                4. กด "Assign Slot" → ระบบกำหนด Rack<br>
+                5. สายพานเลื่อนของไปวางที่ Rack ที่กำหนด<br>
+                6. กด "Confirm Stored" เมื่อวางเสร็จ → ออกจาก Kanban เข้าคลัง
+              </div>
+              <div id="in-s1">
+                <div class="form-block"><label class="form-lbl">SKU / Barcode (สแกนของบนสายพาน)</label><div class="fi-row"><select class="fsel" id="in-sku" onchange="inSkuChange()"><option value="">— Select or scan SKU —</option></select><button class="btn-scan" onclick="openCam('in-sku','inbound')">📷 Scan</button></div></div>
+                <div class="form-block"><label class="form-lbl">Quantity (units)</label><input type="number" class="fi" id="in-qty" value="1" min="1"></div>
+                <div id="in-prev" style="display:none;margin-bottom:11px"></div>
+                <button class="btn btn-primary btn-full" onclick="inScan()">Assign Slot →</button>
+              </div>
+              <div id="in-s2" style="display:none">
+                <div class="info-surface is-suc"><div style="padding:6px 10px;font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:var(--green);border-bottom:1px solid var(--grn-bd);font-weight:500">Slot Assigned — สายพานกำลังนำของไปวาง</div><div class="slot-callout" id="in-slot-disp">—</div><div id="in-assign-det"></div></div>
+                <div class="tip" style="margin:10px 0">→ สายพานนำของไปยัง <b id="in-zone-lbl">?</b><br>เมื่อวางเสร็จแล้วกด Confirm ด้านล่าง</div>
+                <button class="btn btn-success btn-full" onclick="inConfirm()">✓ Confirm — Item Stored (ยืนยันวางเสร็จ)</button>
+              </div>
+              <div id="in-s3" style="display:none"><div class="done-state"><div class="d-ic">✓</div><div class="d-t">Item Stored</div><div class="d-s">เข้าคลังแล้ว · Kanban: Storing → In Stock · กำลังรีเซ็ต…</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="panel"><div class="ph">Pending Placement <span class="rs-badge" style="margin-left:auto" id="pend-cnt">0</span></div><div style="padding:8px 13px" id="pend-list"><div style="color:var(--muted);font-family:var(--mono);font-size:10px;padding:12px 0;text-align:center">No pending</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ OUTBOUND ══ -->
+    <div class="pg" id="page-outbound">
+      <div class="out-grid">
+        <div>
+          <div class="panel">
+            <div class="ph">📤 Create Order</div>
+            <div class="out-tabs">
+              <button class="out-tab active" id="outtab-form-btn" onclick="switchOutTab('form')">Quick Order</button>
+              <button class="out-tab" id="outtab-visual-btn" onclick="switchOutTab('visual')">เลือก Rack (Visual Pick)</button>
+            </div>
+            <div id="outtab-form" style="padding:12px 13px">
+              <div class="tip">เลือก SKU → สายพานนำของออกจาก Col 1 (หน้า Rack) → ผ่าน QC Check ขาออก → Dispatch</div>
+              <div class="form-block"><label class="form-lbl">SKU</label><select class="fsel" id="out-sku" onchange="outAvail()"><option value="">— Select SKU —</option></select></div>
+              <div class="form-block"><label class="form-lbl">Invoice / Order ID (optional)</label><input type="text" class="fi" id="out-inv" placeholder="e.g. INV-0042 (leave blank = auto)"></div>
+              <div class="form-block"><label class="form-lbl">Quantity</label><input type="number" class="fi" id="out-qty" value="1" min="1"></div>
+              <div id="out-avail" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:10px"></div>
+              <button class="btn btn-primary btn-full" onclick="createOrder()">Dispatch via Conveyor →</button>
+            </div>
+            <div id="outtab-visual" style="display:none">
+              <div class="vpick-rack-sel" id="vpick-rack"></div>
+              <div class="vpick-cart">
+                <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;font-weight:500">Pick List <span id="vpick-count" style="font-family:var(--mono)">0 items</span></div>
+                <div id="vpick-list"><div style="color:var(--dim);font-family:var(--mono);font-size:10px;text-align:center;padding:6px 0">เลือก Rack ด้านบนเพื่อเพิ่มรายการ</div></div>
+                <div style="margin-top:8px;display:flex;gap:6px">
+                  <button class="btn btn-ghost" style="flex:1" onclick="clearVPick()">Clear</button>
+                  <button class="btn btn-primary" style="flex:2" onclick="dispatchVPick()">Dispatch →</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="panel"><div class="ph">Active Retrieval</div><div id="act-order-body" style="padding:18px;text-align:center;color:var(--muted)"><div style="font-size:10px;font-family:var(--mono)">No active retrieval</div></div></div>
+        </div>
+      </div>
+      <div class="panel" id="out-scan-card" style="display:none;margin-bottom:10px">
+        <div class="ph">📷 QC Check ขาออก — Scan Confirmation</div>
+        <div style="padding:12px 13px">
+          <div class="tip"><b>วิธีใช้:</b> สแกน Barcode ของที่ออกมาจาก Rack เพื่อยืนยันว่าถูก SKU ก่อน Dispatch<br>SKU ผิด → ระบบแจ้งเตือนทันที</div>
+          <div style="display:flex;gap:8px;max-width:420px">
+            <select class="fsel" id="out-scan-sku" style="flex:1"><option value="">— Scan barcode —</option></select>
+            <button class="btn-scan" onclick="openCam('out-scan-sku','outbound')">📷 Scan</button>
+            <button class="btn btn-success" onclick="outScanConfirm()">Confirm Scan</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel"><div class="ph">Order History</div><div style="padding:8px 13px" id="ord-hist"><div style="color:var(--muted);font-family:var(--mono);font-size:10px;padding:12px 0;text-align:center">No orders yet</div></div></div>
+    </div>
+
+    <!-- ══ KANBAN ══ -->
+    <div class="pg" id="page-kanban">
+      <div class="tip" style="margin-bottom:8px">
+        <b>ขาเข้า (Inbound):</b> Receiving → QC Check → Storing (เข้าคลัง) &nbsp;|&nbsp;
+        <b>ขาออก (Outbound):</b> Picking → QC Check ขาออก → Dispatched<br>
+        คลิกการ์ด → สแกน Barcode เพื่อยืนยัน → ขยับไปขั้นต่อไป
+      </div>
+      <div class="kb-board-wrap" id="kb-board-wrap">
+        <div class="kb-section-label kb-inbound-label">⬇ ขาเข้า (Inbound Flow)</div>
+        <div class="kb-board kb-board-in" id="kb-board-in"></div>
+        <div class="kb-section-label kb-outbound-label">⬆ ขาออก (Outbound Flow)</div>
+        <div class="kb-board kb-board-out" id="kb-board-out"></div>
+      </div>
+    </div>
+
+    <!-- ══ INCIDENTS ══ -->
+    <div class="pg" id="page-incidents">
+      <div class="inc-grid">
+        <div>
+          <div class="panel">
+            <div class="ph">⚠ Report Incident</div>
+            <div style="padding:12px 13px">
+              <div class="tip">Affected units removed from inventory automatically and logged to history.</div>
+              <div class="form-block"><label class="form-lbl">Type</label>
+                <div class="inc-type">
+                  <button class="itype-btn sel-dmg" id="itype-dmg" onclick="selType('dmg')">💥 Damaged</button>
+                  <button class="itype-btn" id="itype-lst" onclick="selType('lst')">🔍 Lost</button>
+                  <button class="itype-btn" id="itype-wrg" onclick="selType('wrg')">🔄 Wrong Item</button>
+                  <button class="itype-btn" id="itype-oth" onclick="selType('oth')">📝 Other</button>
+                </div>
+              </div>
+              <div class="form-block"><label class="form-lbl">SKU Affected</label><select class="fsel" id="inc-sku"><option value="">— Select SKU —</option></select></div>
+              <div class="form-block"><label class="form-lbl">Quantity</label><input type="number" class="fi" id="inc-qty" value="1" min="1"></div>
+              <div class="form-block"><label class="form-lbl">Slot ID (optional)</label><input type="text" class="fi" id="inc-slot" placeholder="e.g. R-01-L1-3"></div>
+              <div class="form-block"><label class="form-lbl">Description</label><textarea class="fi" id="inc-note" placeholder="What happened?"></textarea></div>
+              <button class="btn btn-danger btn-full" onclick="submitIncident()">Submit &amp; Remove from Inventory</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="panel"><div class="ph">Incident History <span class="rs-badge" style="margin-left:auto" id="inc-hist-cnt">0</span></div><div style="padding:8px 13px;max-height:calc(100vh - 150px);overflow-y:auto" id="inc-history"><div style="color:var(--muted);font-family:var(--mono);font-size:10px;padding:14px 0;text-align:center">No incidents reported</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ INVENTORY ══ -->
+    <div class="pg" id="page-inventory">
+      <div class="panel">
+        <div class="ph">Slot Inventory <span style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--dim)" id="iv-cnt">— slots</span></div>
+        <div style="padding:8px 13px 0">
+          <div class="inv-filters">
+            <select class="fsel" id="iv-z" onchange="renderInv()"><option value="">All Zones</option><option value="A">Zone A — Fast (near exit)</option><option value="B">Zone B — Medium</option><option value="C">Zone C — Slow (far from exit)</option></select>
+            <select class="fsel" id="iv-l" onchange="renderInv()"><option value="">All Levels</option><option value="L2">L2 — Top (light)</option><option value="L1">L1 — Bottom (heavy)</option></select>
+            <select class="fsel" id="iv-st" onchange="renderInv()"><option value="">All Status</option><option value="occupied">Occupied</option><option value="empty">Empty</option></select>
+          </div>
+        </div>
+        <div class="tbl-scroll"><table><thead><tr><th>Slot ID</th><th>Rack</th><th>Level</th><th>Col</th><th>SKU</th><th>Cat</th><th>Qty</th><th>Weight</th><th>Status</th></tr></thead><tbody id="iv-body"></tbody></table></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- NEW DELIVERY MODAL -->
+<div class="modal-overlay" id="dlv-modal" onclick="dlvModalClick(event)">
+  <div class="modal-box" style="width:480px">
+    <div class="modal-hdr"><div class="modal-title">Register New Delivery</div><button class="modal-close" onclick="closeNewDelivery()">✕</button></div>
+    <div class="form-block"><label class="form-lbl">Truck / Delivery ID</label><input type="text" class="fi" id="dlv-truck" placeholder="e.g. TRK-104"></div>
+    <div class="form-block"><label class="form-lbl">Dock</label><input type="text" class="fi" id="dlv-dock" placeholder="e.g. Dock 1"></div>
+    <div style="margin-bottom:8px">
+      <div class="form-lbl">Expected Items</div>
+      <div id="dlv-manifest-rows" style="display:flex;flex-direction:column;gap:5px;margin-bottom:6px"></div>
+      <button class="btn btn-ghost btn-sm" onclick="addManifestRow()">+ Add SKU</button>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="saveDelivery()">Register Delivery</button>
+  </div>
+</div>
+
+<!-- CAMERA MODAL -->
+<div class="modal-overlay" id="cam-overlay" onclick="camOverlayClick(event)">
+  <div class="modal-box">
+    <div class="modal-hdr"><div class="modal-title">Scan Barcode / QR Code</div><button class="modal-close" onclick="closeCam()">✕</button></div>
+    <div class="cam-viewport"><video id="cam-video" autoplay muted playsinline></video><canvas id="cam-canvas" style="display:none"></canvas><div class="cam-reticle"></div></div>
+    <div class="cam-status" id="cam-status">Aim at QR code…</div>
+    <div style="margin-top:8px;font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim)">Or tap to select manually</div>
+    <div class="cam-chips" id="cam-chips" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- KANBAN SCAN MODAL -->
+<div class="modal-overlay" id="kb-scan-overlay" onclick="kbScanOverlayClick(event)">
+  <div class="modal-box">
+    <div class="modal-hdr"><div class="modal-title">Scan to Advance Stage</div><button class="modal-close" onclick="closeKbScan()">✕</button></div>
+    <div class="kb-scan-info" id="kb-scan-info"></div>
+    <div class="tip" style="margin-bottom:10px">สแกน Barcode เพื่อยืนยันก่อนขยับ Stage ถัดไป</div>
+    <div class="fi-row" style="margin-bottom:10px">
+      <select class="fsel" id="kb-scan-input" style="flex:1"><option value="">— Select barcode —</option></select>
+      <button class="btn-scan" onclick="openCam('kb-scan-input','kanban')">📷 Scan</button>
+    </div>
+    <button class="btn btn-success btn-full" onclick="confirmKbAdvance()">Confirm &amp; Advance Stage</button>
+  </div>
+</div>
+
+<script>
+// ══ SKU DATA — DEDICATED RACK per SKU ══
+// Layout: 20 racks in a straight line (R-01 to R-20)
+// Zone A (fast) = racks near EXIT (bottom) = R-01, R-02
+// Zone B (medium) = middle = R-03, R-04
+// Zone C (slow) = far from exit (top) = R-05, R-06
+// Weight rule: L1=bottom(heavy ≥20kg), L2=top(light <20kg)
+const SKI={
+  C:{zone:'C',cat:'C',turn:15,w:25,dim:'150cm',l:'L1',rackNum:'20'},// R-20 L1+L2 — Zone C far from exit (top)
+  G:{zone:'C',cat:'C',turn:14,w:10,dim:'50cm', l:'L2',rackNum:'20'},// R-20 L1+L2
+  D:{zone:'B',cat:'B',turn:10,w:40,dim:'200cm',l:'L1',rackNum:'10'},// R-10 L1+L2 — Zone B middle (heavy)
+  F:{zone:'B',cat:'B',turn:7, w:20,dim:'150cm',l:'L2',rackNum:'10'},// R-10 L1+L2
+  E:{zone:'B',cat:'B',turn:5, w:20,dim:'150cm',l:'L1',rackNum:'11'},// R-11 L1+L2
+  B:{zone:'B',cat:'B',turn:10,w:8, dim:'50cm', l:'L2',rackNum:'11'},// R-11 L1+L2
+  H:{zone:'A',cat:'A',turn:2, w:35,dim:'200cm',l:'L2',rackNum:'01'},// R-01 L1+L2 — Zone A near exit (bottom)
+  A:{zone:'A',cat:'A',turn:1, w:40,dim:'200cm',l:'L1',rackNum:'01'},// R-01 L1+L2
+};
+const COLS=5; // 5 slots deep per level (col1=aisle/front, col5=back)
+const RACKS=20; // 20 racks total (single straight line)
+
+// Kanban stages — INBOUND and OUTBOUND separated
+const KB_INBOUND=[
+  {id:'receiving',name:'Receiving',color:'rgba(60,130,220,.8)',dir:'in'},
+  {id:'qc',name:'QC Check',color:'rgba(200,140,40,.8)',dir:'in'},
+  {id:'storing',name:'Storing (เข้าคลัง)',color:'rgba(50,180,120,.8)',dir:'in'},
+];
+const KB_OUTBOUND=[
+  {id:'picking',name:'Picking',color:'rgba(200,140,40,.7)',dir:'out'},
+  {id:'qc_out',name:'QC Check ขาออก',color:'rgba(140,100,220,.8)',dir:'out'},
+  {id:'dispatched',name:'Dispatched',color:'rgba(255,255,255,.2)',dir:'out'},
+];
+const KB_ALL=[...KB_INBOUND,...KB_OUTBOUND];
+
+// ══ STATE ══
+let slots={}, orders=[], nextOid=2046, ordTotal=0, dispatched=0;
+let pendInbound=[], curInbound=null, activeOrder=null;
+let logs=[], blinkIds={};
+let conveyors={A:{active:false,task:'Idle'},B:{active:false,task:'Idle'},C:{active:false,task:'Idle'}};
+let kanbanItems=[], nextKbId=1001;
+let incidents=[], incidentType='dmg';
+let kbScanTarget=null;
+let vpickItems=[];
+let charts={};
+let deliveries=[], nextDlvId=101, activeDlvId=null;
+let rcvLog=[], qcRejected=0, totalReceived=0;
+
+// ══ INIT SLOTS ══
+function initSlots(){
+  for(let r=1;r<=RACKS;r++)for(const lv of['L1','L2'])for(let c=1;c<=COLS;c++){
+    const rn=String(r).padStart(2,'0');
+    const id=`R-${rn}-${lv}-${c}`;
+    slots[id]={id,rackNum:rn,level:lv,col:c,sku:null,qty:0,status:'empty'};
+  }
+  // Seed 5 units per SKU in dedicated rack, start from back (col5→1)
+  Object.keys(SKI).forEach(sku=>{
+    const d=SKI[sku];
+    for(let c=COLS;c>=COLS-4;c--){
+      const id=`R-${d.rackNum}-${d.l}-${c}`;
+      if(slots[id]){slots[id].sku=sku;slots[id].qty=1;slots[id].status='occupied';}
+    }
+  });
+}
+
+// ══ NAV ══
+const PAGE_INFO={
+  dashboard:{t:'Dashboard',s:'WMS overview · Straight belt layout · 20 racks'},
+  rackview: {t:'Rack View',s:'Zone A near exit (bottom) · Zone C far (top) · Col 1=front · Col 5=back'},
+  receiving:{t:'Receiving — Truck Schedule',s:'ตารางนัดหมายรถบรรทุก · กดรับเมื่อรถมาถึง · สินค้าเข้า Kanban'},
+  inbound:  {t:'Inbound — Store to Rack',s:'QC ผ่าน → วางบนสายพาน → สแกน → เข้าคลัง'},
+  outbound: {t:'Outbound',s:'Quick order หรือเลือก Rack → สายพาน → QC Check ขาออก → Dispatch'},
+  kanban:   {t:'Kanban Board',s:'ขาเข้า: Receiving→QC→Storing | ขาออก: Picking→QC ขาออก→Dispatched'},
+  incidents:{t:'Incidents',s:'Report damaged / lost / wrong items · auto removes from inventory'},
+  inventory:{t:'Inventory',s:'Slot-level view · filter by zone / level / status'},
+};
+function goPage(id){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id)?.classList.add('active');
+  document.getElementById('nav-'+id)?.classList.add('active');
+  const info=PAGE_INFO[id]||{t:id,s:''};
+  document.getElementById('ptitle').textContent=info.t;
+  document.getElementById('psub').textContent=info.s;
+  if(id==='inventory') renderInv();
+  if(id==='outbound'){renderOrdHist();outAvail();}
+  if(id==='kanban') renderKanban();
+  if(id==='rackview') renderStraightRack();
+  if(id==='receiving') renderDeliveries();
+  if(id==='incidents') renderIncHistory();
+  if(id==='dashboard') resizeCharts();
+  refreshAll();
+}
+
+function tick(){
+  const n=new Date();
+  document.getElementById('clk').textContent=n.toLocaleTimeString('en-GB');
+  document.getElementById('ckd').textContent=n.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+}
+
+// ══ HELPERS ══
+function nowt(){return new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});}
+function zc(z){return z==='A'?'rgba(220,80,60,1)':z==='B'?'rgba(200,140,40,1)':'rgba(60,130,220,1)';}
+function skuClass(sku){if(!sku)return'emp'; return{A:'sa',H:'sa',D:'sb',E:'sb',F:'sb',B:'sb',C:'sc',G:'sc'}[sku]||'emp';}
+function countAll(){let occ=0,tot=Object.keys(slots).length; Object.values(slots).forEach(s=>{if(s.sku)occ++;}); return{occ,tot};}
+function totalUnits(){return Object.values(slots).reduce((a,s)=>a+(s.qty||0),0);}
+function countSku(k){return Object.values(slots).filter(s=>s.sku===k).reduce((a,s)=>a+(s.qty||0),0);}
+function addLog(type,msg){
+  const icons={SYS:'○',IN:'↓',OUT:'↑',ERP:'◈',RCV:'🚛',ERR:'!'};
+  const cols={SYS:'rgba(255,255,255,.3)',IN:'rgba(60,130,220,.9)',OUT:'rgba(50,180,100,.9)',ERP:'rgba(200,140,40,.9)',RCV:'rgba(60,130,220,.9)',ERR:'rgba(220,80,60,.9)'};
+  logs.unshift({t:nowt(),icon:icons[type]||'·',col:cols[type]||'rgba(255,255,255,.3)',msg});
+  if(logs.length>40) logs.length=40;
+  renderLog();
+}
+function showToast(msg,ok=false){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='toast'+(ok?' ok':'');
+  el.style.display='block'; clearTimeout(el._t);
+  el._t=setTimeout(()=>el.style.display='none',5000);
+}
+function dismissAlert(){document.getElementById('alert-banner').classList.remove('show');document.getElementById('ms-area').style.paddingTop='';}
+function showAlertBanner(msg){
+  document.getElementById('ab-msg').textContent='⚠ '+msg;
+  document.getElementById('alert-banner').classList.add('show');
+  document.getElementById('ms-area').style.paddingTop='36px';
+}
+
+function renderInboundFeed(){
+  const el=document.getElementById('feed-ib'); if(!el)return;
+  const active=deliveries.filter(d=>d.status==='active'||d.status==='pending');
+  if(!active.length){el.innerHTML='<div style="color:var(--muted);font-family:var(--mono);font-size:10px;padding:8px 0;text-align:center">No active deliveries</div>';return;}
+  el.innerHTML=active.slice(0,5).map(d=>{
+    const total=d.manifest.reduce((a,m)=>a+m.expected,0);
+    const recv=d.manifest.reduce((a,m)=>a+m.received,0);
+    const pct=total>0?Math.round(recv/total*100):0;
+    const stCls={pending:'color:var(--zb)',active:'color:var(--za)'}[d.status]||'';
+    return`<div class="or-row"><div class="or-top"><span class="or-id">${d.id} · ${d.truck}</span><span class="or-st" style="${stCls}">${d.status}</span></div><div class="or-d">${d.dock} · ${recv}/${total} items · ${pct}%</div></div>`;
+  }).join('');
+}
+
+// ══ REFRESH ══
+function refreshAll(){
+  const{occ,tot}=countAll(); const units=totalUnits();
+  const openInc=incidents.filter(i=>!i.closed).length;
+  const kbActive=kanbanItems.filter(k=>k.stage!=='dispatched').length;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set('kv1',units); set('kv2',Math.round(occ/tot*100)+'%'); set('kv3',ordTotal); set('kv4',dispatched);
+  set('dk-total',units); set('dk-util',Math.round(occ/tot*100)+'%'); set('dk-util-s',`${occ} / ${tot} slots`);
+  set('dk-ord',ordTotal); set('dk-ord-s',dispatched+' dispatched'); set('dk-kb',kbActive); set('dk-qc',qcRejected);
+  set('wst-occ',occ); set('wst-emp',tot-occ); set('wst-inc',openInc);
+  set('wst-qcr',qcRejected);
+  const pct=totalReceived>0?((qcRejected/totalReceived)*100).toFixed(1)+'%':'—';
+  set('wst-qcpct',pct);
+  const qcS=document.getElementById('wst-qcr-s');
+  if(qcS) qcS.innerHTML=qcRejected>0?'<span class="bdg bdg-warn">Rejected</span>':'<span class="bdg bdg-ok">Clear</span>';
+  const qcPS=document.getElementById('wst-qcpct-s');
+  if(qcPS){const r=totalReceived>0?qcRejected/totalReceived:0; qcPS.innerHTML=r>0.05?'<span class="bdg bdg-warn">High</span>':'<span class="bdg bdg-ok">Good</span>';}
+  const wis=document.getElementById('wst-inc-s');
+  if(wis) wis.innerHTML=openInc>0?'<span class="bdg bdg-warn">Alert</span>':'<span class="bdg bdg-ok">Clear</span>';
+  const ob=document.getElementById('ob-badge'); if(ob){const n=orders.filter(o=>o.status!=='dispatched').length;ob.style.display=n>0?'inline':'none';ob.textContent=n;}
+  const ib2=document.getElementById('inc-badge'); if(ib2){ib2.style.display=openInc>0?'inline':'none';ib2.textContent=openInc;}
+  const rb=document.getElementById('rcv-badge'); if(rb){const n=deliveries.filter(d=>d.status==='active').length;rb.style.display=n>0?'inline':'none';rb.textContent=n;}
+  renderInboundFeed();
+  updateCharts();
+}
+
+function renderLog(){
+  const el=document.getElementById('alog'); if(!el)return;
+  el.innerHTML=logs.slice(0,20).map(l=>`<div class="log-entry"><span class="le-t">${l.t}</span><span class="le-i" style="color:${l.col}">${l.icon}</span><span class="le-m">${l.msg}</span></div>`).join('');
+}
+
+// ══ CHARTS ══
+function initCharts(){
+  Chart.defaults.color='rgba(255,255,255,.4)';
+  Chart.defaults.borderColor='rgba(255,255,255,.07)';
+  const dc=document.getElementById('chart-donut'); if(!dc)return;
+  const skuCounts={};
+  Object.keys(SKI).forEach(k=>skuCounts[k]=0);
+  Object.values(slots).forEach(s=>{if(s.sku&&skuCounts.hasOwnProperty(s.sku))skuCounts[s.sku]++;});
+  const skuLabels=Object.keys(SKI);
+  const skuData=skuLabels.map(k=>skuCounts[k]);
+  const empty=Object.keys(slots).length-Object.values(skuCounts).reduce((a,b)=>a+b,0);
+  const donutLabels=[...skuLabels,'Empty'];
+  const donutData=[...skuData,empty];
+  const skuColors=['rgba(220,80,60,.75)','rgba(60,130,220,.75)','rgba(200,140,40,.75)','rgba(100,200,100,.75)','rgba(200,100,200,.75)','rgba(200,150,50,.75)','rgba(100,150,200,.75)','rgba(200,200,100,.75)'];
+  const donutColors=[...skuLabels.map((k,i)=>skuColors[i%skuColors.length]),'rgba(255,255,255,.07)'];
+  charts.donut=new Chart(dc,{type:'doughnut',data:{labels:donutLabels,datasets:[{data:donutData,backgroundColor:donutColors,borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw} slots`}}}}});
+  const sc=document.getElementById('chart-sku-bar'); if(!sc)return;
+  charts.skubar=new Chart(sc,{type:'bar',data:{labels:Object.keys(SKI),datasets:[{data:Object.keys(SKI).map(k=>countSku(k)),backgroundColor:Object.keys(SKI).map(k=>{const z=SKI[k].zone;return z==='A'?'rgba(220,80,60,.75)':z==='B'?'rgba(200,140,40,.75)':'rgba(60,130,220,.75)';}),borderRadius:3,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:9},color:'rgba(255,255,255,.4)'}},y:{beginAtZero:true,grid:{color:'rgba(255,255,255,.05)'},ticks:{font:{size:9},color:'rgba(255,255,255,.4)',stepSize:1}}}}});
+  const kc=document.getElementById('chart-kb-bar'); if(!kc)return;
+  const allStageNames=KB_ALL.map(s=>s.name);
+  charts.kbbar=new Chart(kc,{type:'bar',data:{labels:allStageNames,datasets:[{data:new Array(KB_ALL.length).fill(0),backgroundColor:KB_ALL.map(s=>s.color),borderRadius:3,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:8},color:'rgba(255,255,255,.4)',maxRotation:30}},y:{beginAtZero:true,grid:{color:'rgba(255,255,255,.05)'},ticks:{font:{size:9},color:'rgba(255,255,255,.4)',stepSize:1}}}}});
+}
+function updateCharts(){
+  if(!charts.donut)return;
+  const skuCounts={};
+  Object.keys(SKI).forEach(k=>skuCounts[k]=0);
+  Object.values(slots).forEach(s=>{if(s.sku&&skuCounts.hasOwnProperty(s.sku))skuCounts[s.sku]++;});
+  const skuLabels=Object.keys(SKI);
+  const empty=Object.keys(slots).length-Object.values(skuCounts).reduce((a,b)=>a+b,0);
+  const donutData=[...skuLabels.map(k=>skuCounts[k]),empty];
+  charts.donut.data.datasets[0].data=donutData;
+  charts.donut.update('none');
+  const dl=document.getElementById('donut-legend');
+  if(dl){
+    let html='';
+    const skuColors=['rgba(220,80,60,.75)','rgba(60,130,220,.75)','rgba(200,140,40,.75)','rgba(100,200,100,.75)','rgba(200,100,200,.75)','rgba(200,150,50,.75)','rgba(100,150,200,.75)','rgba(200,200,100,.75)'];
+    skuLabels.forEach((k,i)=>{
+      const color=skuColors[i%skuColors.length];
+      html+=`<div style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:${color};display:inline-block;flex-shrink:0"></span>SKU-${k}: ${skuCounts[k]}</div>`;
+    });
+    html+=`<div style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:rgba(255,255,255,.12);display:inline-block;flex-shrink:0"></span><span style="color:var(--dim)">Empty: ${empty}</span></div>`;
+    dl.innerHTML=html;
+  }
+  if(charts.skubar){charts.skubar.data.datasets[0].data=Object.keys(SKI).map(k=>countSku(k));charts.skubar.update('none');}
+  if(charts.kbbar){charts.kbbar.data.datasets[0].data=KB_ALL.map(s=>kanbanItems.filter(k=>k.stage===s.id).length);charts.kbbar.update('none');}
+}
+function resizeCharts(){Object.values(charts).forEach(c=>{try{c.resize();}catch(e){}});}
+
+// ══ STRAIGHT RACK VIEW (20 rows, single column, Zone A at bottom near exit) ══
+function renderStraightRack(clickable=false, vpickMode=false){
+  const wrap=document.getElementById('i-rack-wrap'); if(!wrap)return;
+  // Remove old legend if any
+  const oldLeg=document.getElementById('rack-legend');
+  if(oldLeg) oldLeg.remove();
+
+  // Zone C (slow) = far from exit = top = rack 20
+  // Zone B (medium) = middle = racks 10-11
+  // Zone A (fast) = near exit = bottom = rack 01
+  // Display order: rack 20 (top/far) → rack 01 (bottom/near exit)
+  // So we render from rack 20 down to rack 01
+  const makeRack=(rn)=>{
+    const rKey=`R-${rn}`;
+    const zone=Object.values(SKI).find(d=>d.rackNum===rn);
+    const zoneName=zone?zone.zone:null;
+    const rowCls=zoneName?{A:'zone-a',B:'zone-b',C:'zone-c'}[zoneName]:'';
+    const zoneColor=zoneName?zc(zoneName):'var(--dim)';    const skusInRack=Object.entries(SKI).filter(([k,v])=>v.rackNum===rn).map(([k])=>k).join(',');
+    const zoneTag=zoneName?`<span class="rack-zone-tag" style="background:${zoneColor.replace('1)','0.15)')};color:${zoneColor};border:1px solid ${zoneColor.replace('1)','0.3)')}">${zoneName}${skusInRack?' '+skusInRack:''}</span>`:'<span class="rack-zone-tag" style="color:var(--dim)">—</span>';
+
+
+    function levelHTML(lv){
+      const sku=Object.keys(SKI).find(k=>SKI[k].rackNum===rn&&SKI[k].l===lv)||null;
+      const slotsHTML=Array.from({length:COLS},(_,i)=>{
+        const col=i+1;
+        const id=`R-${rn}-${lv}-${col}`;
+        const s=slots[id]; const slku=s?.sku;
+        const cls=slku?skuClass(slku):'emp';
+        const bl=blinkIds[id]?' bl':'';
+        const selCls=vpickItems.some(p=>p.slotId===id)?' sel-out':'';
+        const tip=slku?`${id} · SKU-${slku} · ${SKI[slku].w}kg · qty:${s.qty}`:`${id} — Empty`;
+        const canClick=(clickable||vpickMode)&&slku;
+        const oc=canClick?(vpickMode?`vpickToggle('${id}')`:`slotClick('${id}')`):`slotClick('${id}')`;
+        return`<div class="rsl ${cls}${bl}${selCls}" title="${tip}" onclick="${oc}" style="cursor:pointer">${slku?slku:''}</div>`;
+      }).join('');
+      const lvColor=lv==='L2'?'rgba(255,255,255,.55)':'rgba(255,255,255,.3)';
+      return`<div class="rack-level"><span class="lv-tag ${lv==='L2'?'l2':''}">${lv}</span><span class="sku-lbl" style="color:${sku?zc(SKI[sku]?.zone||'A'):'var(--dim)'}">${sku?`SKU-${sku}`:'—'}</span><div class="rack-slots"><span class="front-lbl">↔</span>${slotsHTML}</div></div>`;
+    }
+    return`<div class="rack-row ${rowCls}"><div class="rack-id">${rKey}${zoneTag}</div><div class="rack-levels">${levelHTML('L2')}${levelHTML('L1')}</div></div>`;
+  };
+
+  // Render from rack 20 (far/top) to rack 01 (near exit/bottom)
+  let html='';
+  for(let r=RACKS;r>=1;r--){
+    html+=makeRack(String(r).padStart(2,'0'));
+  }
+  wrap.innerHTML=html;
+
+  // Add legend
+  wrap.insertAdjacentHTML('afterend',`<div id="rack-legend" style="display:flex;gap:14px;padding:6px 0;font-family:var(--mono);font-size:9px;color:var(--muted)"><span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:rgba(220,80,60,.3);border:1px solid rgba(220,80,60,.5)"></span>Zone A Fast (near exit)</span><span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:rgba(200,140,40,.3);border:1px solid rgba(200,140,40,.5)"></span>Zone B Medium</span><span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:rgba(60,130,220,.3);border:1px solid rgba(60,130,220,.5)"></span>Zone C Slow (far from exit)</span><span style="margin-left:auto;color:var(--dim)">← Col 1 (front/aisle) · Col 5 (back/wall) →</span></div>`);
+}
+
+function slotClick(id){
+  const s=slots[id]; if(!s)return;
+  const info=s.sku?SKI[s.sku]:null;
+  document.getElementById('sdp-empty').style.display='none';
+  const content=document.getElementById('sdp-content');
+  content.style.display='block';
+  const zcolor=info?zc(info.zone):'var(--muted)';
+  const lvNote=s.level==='L2'?'Top shelf (light <20kg)':'Bottom shelf (heavy ≥20kg)';
+  content.innerHTML=`<div style="padding:6px 10px;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;font-family:var(--mono);color:${zcolor}">${id}</div>
+    <div class="info-row"><span class="info-key">Rack</span><span class="info-val">R-${s.rackNum}</span></div>
+    <div class="info-row"><span class="info-key">Level</span><span class="info-val">${s.level} — ${lvNote}</span></div>
+    <div class="info-row"><span class="info-key">Col</span><span class="info-val">${s.col} — ${s.col===1?'Front (aisle)':s.col===COLS?'Back (wall)':'Mid'}</span></div>
+    <div class="info-row"><span class="info-key">Status</span><span class="info-val">${s.sku?'<span class="bdg bdg-ok">Occupied</span>':'<span class="bdg bdg-off">Empty</span>'}</span></div>
+    ${info?`<div style="padding:6px 10px;border-top:1px solid var(--bd2);border-bottom:1px solid var(--border);font-size:8px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:500">SKU Info</div>
+    <div class="info-row"><span class="info-key">SKU</span><span class="info-val">SKU-${s.sku}</span></div>
+    <div class="info-row"><span class="info-key">Qty in slot</span><span class="info-val">${s.qty} unit(s)</span></div>
+    <div class="info-row"><span class="info-key">Weight</span><span class="info-val">${info.w} kg${info.w>=35?' ⚠ heavy':''}</span></div>
+    <div class="info-row"><span class="info-key">Turnover</span><span class="info-val">${info.turn}d · Zone ${info.zone}</span></div>
+    <div class="info-row"><span class="info-key">Dedicated rack</span><span class="info-val" style="color:${zcolor}">R-${info.rackNum} ${info.l}</span></div>`:'<div style="padding:10px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:10px">Empty slot</div>'}`;
+}
+
+// ══ RECEIVING ══
+function openNewDelivery(){
+  document.getElementById('dlv-truck').value='';
+  document.getElementById('dlv-dock').value='';
+  document.getElementById('dlv-manifest-rows').innerHTML='';
+  addManifestRow();
+  document.getElementById('dlv-modal').classList.add('open');
+}
+function closeNewDelivery(){document.getElementById('dlv-modal').classList.remove('open');}
+function dlvModalClick(e){if(e.target===document.getElementById('dlv-modal'))closeNewDelivery();}
+function addManifestRow(){
+  const cont=document.getElementById('dlv-manifest-rows');
+  const row=document.createElement('div');
+  row.style.cssText='display:flex;gap:5px;align-items:center';
+  row.innerHTML=`<select class="fsel" style="flex:1">${Object.keys(SKI).map(k=>`<option value="${k}">SKU-${k}</option>`).join('')}</select><input type="number" class="fi" value="1" min="1" style="width:60px"><button class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()" style="flex-shrink:0">✕</button>`;
+  cont.appendChild(row);
+}
+function saveDelivery(){
+  const truck=document.getElementById('dlv-truck').value.trim()||'TRK-'+nextDlvId;
+  const dock=document.getElementById('dlv-dock').value.trim()||'Dock 1';
+  const rows=[...document.getElementById('dlv-manifest-rows').children];
+  const manifest=rows.map(r=>{
+    const sel=r.querySelector('select'); const inp=r.querySelector('input[type="number"]');
+    return{sku:sel.value,expected:parseInt(inp.value)||1,received:0,rejected:0};
+  }).filter(m=>m.sku);
+  if(!manifest.length){showToast('Add at least one SKU to manifest'); return;}
+  const id='DLV-'+String(nextDlvId++).padStart(3,'0');
+  deliveries.push({id,truck,dock,manifest,status:'pending',t:nowt()});
+  closeNewDelivery();
+  addLog('RCV',`${id} · ${truck} at ${dock} · ${manifest.length} SKU types expected`);
+  renderDeliveries(); refreshAll();
+  showToast(id+' registered — switch to Receiving to start scanning',true);
+}
+function selectDelivery(id){
+  activeDlvId=id;
+  const dlv=deliveries.find(d=>d.id===id);
+  if(dlv&&dlv.status==='pending'){dlv.status='active';}
+  renderDeliveries(); renderActiveScan();
+}
+function renderDeliveries(){
+  const el=document.getElementById('dlv-list'); const cnt=document.getElementById('dlv-cnt');
+  if(cnt) cnt.textContent=deliveries.length;
+  if(!el)return;
+  if(!deliveries.length){el.innerHTML='<div style="color:var(--muted);font-family:var(--mono);font-size:10px;padding:10px 0;text-align:center">No deliveries</div>'; return;}
+  const stCls={pending:'ds-pending',active:'ds-active',complete:'ds-done'};
+  el.innerHTML=deliveries.slice().reverse().map(d=>`<div class="delivery-card${activeDlvId===d.id?' active-dlv':''}" onclick="selectDelivery('${d.id}')">
+    <div class="dlv-top"><span class="dlv-id">${d.id} · ${d.truck}</span><span class="dlv-st ${stCls[d.status]}">${d.status}</span></div>
+    <div class="dlv-d">${d.dock} · ${d.manifest.length} SKU types · ${d.t}</div>
+  </div>`).join('');
+}
+function renderActiveScan(){
+  const noEl=document.getElementById('rcv-no-dlv');
+  const actEl=document.getElementById('rcv-active');
+  const dlv=deliveries.find(d=>d.id===activeDlvId);
+  if(!dlv){if(noEl)noEl.style.display='block';if(actEl)actEl.style.display='none';return;}
+  if(noEl)noEl.style.display='none'; if(actEl)actEl.style.display='block';
+  const hd=document.getElementById('rcv-manifest-hd');
+  if(hd) hd.innerHTML=`<div style="font-family:var(--mono);font-size:11px;font-weight:600">${dlv.id} · ${dlv.truck} · ${dlv.dock}</div>`;
+  const sc=document.getElementById('rcv-scan-sku');
+  if(sc) sc.innerHTML='<option value="">— Scan or select SKU —</option>'+dlv.manifest.map(m=>`<option value="${m.sku}">SKU-${m.sku} (exp: ${m.expected})</option>`).join('');
+  const mi=document.getElementById('rcv-manifest-items');
+  if(!mi)return;
+  mi.innerHTML=dlv.manifest.map(m=>{
+    const pct=m.expected>0?Math.round((m.received/m.expected)*100):0;
+    return`<div class="manifest-item">
+      <span class="mi-sku" style="color:${zc(SKI[m.sku]?.zone||'A')}">SKU-${m.sku}</span>
+      <div class="mi-prog">
+        <div style="display:flex;justify-content:space-between"><span class="mi-lbl">Received: ${m.received} / ${m.expected}</span>${m.rejected>0?`<span style="color:rgba(220,80,60,.9);font-family:var(--mono);font-size:9px">Rejected: ${m.rejected}</span>`:''}</div>
+        <div class="mi-bar"><div class="mi-fill" style="width:${Math.min(pct,100)}%;background:${pct>=100?'rgba(50,180,100,.8)':'rgba(200,140,40,.7)'}"></div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function rcvAccept(){
+  const dlv=deliveries.find(d=>d.id===activeDlvId);
+  const sku=document.getElementById('rcv-scan-sku').value;
+  if(!dlv){showToast('Select a delivery first'); return;}
+  if(!sku){showToast('Scan or select a SKU'); return;}
+  const mi=dlv.manifest.find(m=>m.sku===sku);
+  if(!mi){showToast(`SKU-${sku} is not in this delivery manifest — reject it`); return;}
+  if(mi.received>=mi.expected){showToast(`SKU-${sku} already fully received (${mi.expected} units)`); return;}
+  mi.received++; totalReceived++;
+  // Create kanban card at Receiving stage (inbound)
+  addKbItem(sku,1,'receiving',`${dlv.id} · ${dlv.truck}`,'in');
+  addLog('RCV',`✓ Accepted SKU-${sku} · ${dlv.id} · Kanban: Receiving (ขาเข้า)`);
+  appendRcvLog('ok',`✓ SKU-${sku} accepted`,`${dlv.id} · ${dlv.truck} · advancing to QC`);
+  renderActiveScan(); refreshAll();
+  const allDone=dlv.manifest.every(m=>m.received+m.rejected>=m.expected);
+  if(allDone){dlv.status='complete'; renderDeliveries(); showToast(dlv.id+' — all items processed',true);}
+}
+function rcvReject(){
+  const dlv=deliveries.find(d=>d.id===activeDlvId);
+  const sku=document.getElementById('rcv-scan-sku').value;
+  if(!dlv){showToast('Select a delivery first'); return;}
+  if(!sku){showToast('Scan or select a SKU'); return;}
+  const mi=dlv.manifest.find(m=>m.sku===sku)||{sku,expected:0,received:0,rejected:0};
+  if(!dlv.manifest.find(m=>m.sku===sku)) dlv.manifest.push(mi);
+  mi.rejected++; qcRejected++; totalReceived++;
+  addLog('ERR',`✕ Rejected SKU-${sku} · QC fail · ${dlv.id} · send back`);
+  appendRcvLog('rej',`✕ SKU-${sku} rejected`,`QC failed · returned to sender · ${dlv.id}`);
+  renderActiveScan(); refreshAll();
+  showAlertBanner(`QC Reject: SKU-${sku} does not pass inspection — send back to ${dlv.truck}`);
+}
+function rcvConfirmArrival(){
+  const dlv=deliveries.find(d=>d.id===activeDlvId);
+  if(!dlv){showToast('Select a delivery first'); return;}
+  dlv.status='active';
+  // Add all SKUs from manifest to Kanban at 'receiving' stage
+  dlv.manifest.forEach(m=>{
+    addKbItem(m.sku,m.expected,'receiving',`${dlv.id} · ${dlv.truck}`,'in');
+  });
+  addLog('RCV',`✓ ${dlv.id} · ${dlv.truck} arrived at ${dlv.dock} · All items sent to Kanban (ขาเข้า)`);
+  appendRcvLog('ok',`${dlv.id} Confirmed`,`${dlv.truck} arrived · ${dlv.manifest.length} SKU types to process`);
+  renderDeliveries(); renderActiveScan(); refreshAll();
+  showToast(`${dlv.id} confirmed — items ready in Kanban`,true);
+}
+function rcvCancelDelivery(){
+  const dlv=deliveries.find(d=>d.id===activeDlvId);
+  if(!dlv){showToast('Select a delivery first'); return;}
+  dlv.status='pending';
+  activeDlvId=null;
+  renderDeliveries(); renderActiveScan(); refreshAll();
+  showToast(`${dlv.id} cancelled`,true);
+}
+function appendRcvLog(type,title,detail){
+  rcvLog.unshift({type,title,detail,t:nowt()});
+  const el=document.getElementById('rcv-log');
+  const cnt=document.getElementById('rcv-log-cnt');
+  if(cnt) cnt.textContent=rcvLog.length;
+  if(!el)return;
+  el.innerHTML=rcvLog.slice(0,30).map(r=>{const rc={ok:'rei-ok',rej:'rei-rej',ret:'rei-ret'}[r.type]||'rei-ok';const ri={ok:'✓',rej:'✕',ret:'↩'};return`<div class="rcv-entry"><div class="re-ic ${rc}">${ri[r.type]||'·'}</div><div class="re-body"><div class="re-title">${r.title}</div><div class="re-d">${r.detail} · ${r.t}</div></div></div>`;}).join('');
+}
+
+// ══ KANBAN ══
+function addKbItem(sku,qty,stage,note='',dir='in'){
+  const id='KB-'+String(nextKbId++).padStart(4,'0');
+  kanbanItems.push({id,sku,qty,stage,note,t:nowt(),dir});
+  addLog('ERP',`${id} · SKU-${sku} ×${qty} → ${KB_ALL.find(s=>s.id===stage)?.name}`);
+  return id;
+}
+function renderKanban(){
+  const elIn=document.getElementById('kb-board-in');
+  const elOut=document.getElementById('kb-board-out');
+  if(!elIn||!elOut)return;
+
+  const renderBoard=(stages,el)=>{
+    el.innerHTML=stages.map(stage=>{
+      const items=kanbanItems.filter(k=>k.stage===stage.id);
+      const stageList=stage.dir==='in'?KB_INBOUND:KB_OUTBOUND;
+      const nextStage=stageList[stageList.indexOf(stage)+1];
+      const cards=items.map(item=>`<div class="kb-card${item.isIncident?' incident':''}" onclick="openKbScan('${item.id}')">
+          <div class="kc-id">${item.id}${item.isIncident?' ⚠':''}</div>
+          <div class="kc-sku">SKU-${item.sku}</div>
+          <div class="kc-qty">×${item.qty} units</div>
+          <span class="kb-dir-badge ${stage.dir==='in'?'kb-dir-in':'kb-dir-out'}">${stage.dir==='in'?'⬇ ขาเข้า':'⬆ ขาออก'}</span>
+          ${item.note?`<div class="kc-ts">${item.note}</div>`:''}
+          <div class="kc-ts">${item.t}</div>
+          ${nextStage?`<div class="kb-scan-badge">📷 scan</div>`:''}
+        </div>`).join('');
+      return`<div class="kb-col">
+        <div class="kb-col-hd"><div class="kb-dot" style="background:${stage.color};border-radius:50%;width:7px;height:7px;flex-shrink:0"></div><span class="kb-stage-name">${stage.name}</span><span class="kb-cnt">${items.length}</span></div>
+        <div class="kb-cards">${cards||`<div style="color:var(--dim);font-family:var(--mono);font-size:9px;text-align:center;padding:8px 0">—</div>`}</div>
+      </div>`;
+    }).join('');
+  };
+
+  renderBoard(KB_INBOUND,elIn);
+  renderBoard(KB_OUTBOUND,elOut);
+}
+function openKbScan(itemId){
+  const item=kanbanItems.find(k=>k.id===itemId); if(!item)return;
+  const stageList=item.dir==='in'?KB_INBOUND:KB_OUTBOUND;
+  const si=stageList.findIndex(s=>s.id===item.stage);
+  if(si>=stageList.length-1){showToast(item.dir==='in'?'เข้าคลังแล้ว':'Dispatched แล้ว',true); return;}
+  kbScanTarget=item;
+  const nextStage=stageList[si+1];
+  const curStage=stageList[si];
+  let tutorialText='';
+  if(item.dir==='in'&&curStage.id==='qc'){
+    tutorialText='<div style="margin-top:8px;padding:6px;background:rgba(50,180,120,.15);border:1px solid rgba(50,180,120,.3);border-radius:3px;font-size:9px;color:rgba(50,180,120,.9)">💡 QC Pass: Scan barcode → วางบนสายพาน → สายพานรู้ว่าของวางแล้ว → เข้าคลัง</div>';
+  } else if(item.dir==='out'&&curStage.id==='qc_out'){
+    tutorialText='<div style="margin-top:8px;padding:6px;background:rgba(50,180,120,.15);border:1px solid rgba(50,180,120,.3);border-radius:3px;font-size:9px;color:rgba(50,180,120,.9)">💡 QC Check ขาออก: Scan barcode → ยืนยัน → ส่งออก</div>';
+  }
+  document.getElementById('kb-scan-info').innerHTML=`<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-weight:600">${item.id}</span><span class="bdg bdg-ok" style="font-size:8px">${curStage.name}</span></div><div style="font-size:10px;color:var(--muted)">SKU-${item.sku} ×${item.qty} → ขยับไป <b style="color:rgba(50,180,100,.9)">${nextStage.name}</b></div><div style="margin-top:5px"><span class="kb-dir-badge ${item.dir==='in'?'kb-dir-in':'kb-dir-out'}">${item.dir==='in'?'⬇ ขาเข้า':'⬆ ขาออก'}</span></div>${tutorialText}`;
+  const sel=document.getElementById('kb-scan-input');
+  sel.innerHTML='<option value="">— Select barcode —</option>'+Object.keys(SKI).map(k=>`<option value="${k}">SKU-${k}</option>`).join('');
+  sel.value='';
+  document.getElementById('kb-scan-overlay').classList.add('open');
+}
+function closeKbScan(){document.getElementById('kb-scan-overlay').classList.remove('open');kbScanTarget=null;}
+function kbScanOverlayClick(e){if(e.target===document.getElementById('kb-scan-overlay'))closeKbScan();}
+function confirmKbAdvance(){
+  if(!kbScanTarget)return;
+  const scanned=document.getElementById('kb-scan-input').value;
+  if(!scanned){showToast('Please select the item barcode'); return;}
+  if(scanned!==kbScanTarget.sku){showToast(`Wrong barcode — expected SKU-${kbScanTarget.sku}, got SKU-${scanned}`); return;}
+  const stageList=kbScanTarget.dir==='in'?KB_INBOUND:KB_OUTBOUND;
+  const si=stageList.findIndex(s=>s.id===kbScanTarget.stage);
+  const nextStage=stageList[si+1];
+  const itemId=kbScanTarget.id; const sku=kbScanTarget.sku;
+  kbScanTarget.stage=nextStage.id; kbScanTarget.t=nowt();
+  // If inbound reaches 'storing' final stage, mark as in-stock
+  if(nextStage.id==='storing'){
+    kbScanTarget.note='เข้าคลังแล้ว';
+  }
+  addLog('ERP',`${itemId} · SKU-${sku} → ${nextStage.name} (scan verified)`);
+  closeKbScan(); renderKanban(); refreshAll();
+  showToast(`${itemId} → ${nextStage.name}`,true);
+  kbScanTarget=null;
+}
+
+// ══ SLOT ASSIGNMENT ══
+function findSlot(sku){
+  const d=SKI[sku];
+  const cands=Object.values(slots).filter(s=>s.rackNum===d.rackNum&&s.level===d.l&&s.status==='empty');
+  cands.sort((a,b)=>b.col-a.col);
+  return cands[0]?.id||null;
+}
+function findPickSlot(sku){
+  const d=SKI[sku];
+  const cands=Object.values(slots).filter(s=>s.rackNum===d.rackNum&&s.level===d.l&&s.sku===sku&&s.qty>0);
+  cands.sort((a,b)=>a.col-b.col);
+  return cands[0]?.id||null;
+}
+
+// ══ INBOUND ══
+function populateInSku(){
+  const el=document.getElementById('in-sku'); if(!el)return;
+  el.innerHTML='<option value="">— Select or scan SKU —</option>'+
+    Object.keys(SKI).map(k=>`<option value="${k}">SKU-${k} · Zone ${SKI[k].zone} · ${SKI[k].w}kg · ${SKI[k].turn}d</option>`).join('');
+}
+function inSkuChange(){
+  const sku=document.getElementById('in-sku').value;
+  const el=document.getElementById('in-prev'); if(!el)return;
+  if(!sku){el.style.display='none'; return;}
+  const d=SKI[sku];
+  el.style.display='block';
+  const color=zc(d.zone);
+  el.innerHTML=`<div class="info-surface" style="border-color:${color.replace('1)','0.3)')}">
+    <div class="info-row"><span class="info-key">Dedicated rack</span><span class="info-val" style="color:${color}">R-${d.rackNum} · ${d.l}</span></div>
+    <div class="info-row"><span class="info-key">Weight</span><span class="info-val">${d.w} kg → ${d.l==='L1'?'Bottom shelf':'Top shelf'}</span></div>
+    <div class="info-row"><span class="info-key">Current stock</span><span class="info-val">${countSku(sku)} units</span></div>
+  </div>`;
+}
+function inScan(){
+  const sku=document.getElementById('in-sku').value;
+  const qty=parseInt(document.getElementById('in-qty').value)||1;
+  if(!sku){showToast('Please select a SKU'); return;}
+  const slotId=findSlot(sku);
+  if(!slotId){showToast(`No empty slot in dedicated rack R-${SKI[sku].rackNum} for SKU-${sku}`); return;}
+  curInbound={sku,qty,slotId};
+  const sl=slots[slotId]; const d=SKI[sku]; const color=zc(d.zone);
+  document.getElementById('in-slot-disp').textContent=slotId;
+  const znl=document.getElementById('in-zone-lbl');
+  znl.textContent=`Rack R-${d.rackNum} · ${d.l} · Col ${sl.col} (${sl.col===COLS?'back':'slot '+sl.col})`;
+  znl.style.color=color;
+  document.getElementById('in-assign-det').innerHTML=`
+    <div class="info-row"><span class="info-key">SKU</span><span class="info-val">SKU-${sku}</span></div>
+    <div class="info-row"><span class="info-key">Quantity</span><span class="info-val">${qty} × ${d.w}kg = ${qty*d.w}kg</span></div>
+    <div class="info-row"><span class="info-key">Column</span><span class="info-val">${sl.col} of ${COLS} (${sl.col===1?'Front/Aisle':sl.col===COLS?'Back/Wall':'Mid'})</span></div>`;
+  pendInbound.push({sku,qty,slotId,t:nowt()});
+  document.getElementById('in-s1').style.display='none';
+  document.getElementById('in-s2').style.display='block';
+  // Advance kanban from 'qc' to 'storing'
+  const kbItem=kanbanItems.find(k=>k.sku===sku&&(k.stage==='qc'||k.stage==='storing')&&k.dir==='in');
+  if(kbItem){kbItem.stage='storing';kbItem.t=nowt();}
+  else addKbItem(sku,qty,'storing',slotId,'in');
+  addLog('IN',`SKU-${sku} ×${qty} → ${slotId} · col${sl.col} · Kanban: Storing (ขาเข้า)`);
+  renderPend();
+}
+function inConfirm(){
+  if(!curInbound)return;
+  const{sku,qty,slotId}=curInbound;
+  if(!slots[slotId].sku){slots[slotId].sku=sku;slots[slotId].qty=0;}
+  slots[slotId].qty+=qty;
+  slots[slotId].status='occupied';
+  pendInbound=pendInbound.filter(p=>p.slotId!==slotId);
+  // Move kanban from storing to done (remove from board or mark complete)
+  const kbItem=kanbanItems.find(k=>k.sku===sku&&k.stage==='storing'&&k.dir==='in');
+  if(kbItem){kbItem.stage='storing';kbItem.note='เข้าคลังแล้ว ✓';kbItem.t=nowt();}
+  addLog('IN',`SKU-${sku} ×${qty} confirmed at ${slotId} · เข้าคลังแล้ว`);
+  curInbound=null;
+  document.getElementById('in-s2').style.display='none';
+  document.getElementById('in-s3').style.display='block';
+  refreshAll(); renderPend();
+  setTimeout(()=>{
+    document.getElementById('in-s3').style.display='none';
+    document.getElementById('in-s1').style.display='block';
+    document.getElementById('in-sku').value='';
+    document.getElementById('in-qty').value='1';
+    document.getElementById('in-prev').style.display='none';
+    refreshAll();
+  },2000);
+}
+function renderPend(){
+  const el=document.getElementById('pend-list'); const c=document.getElementById('pend-cnt');
+  if(c) c.textContent=pendInbound.length;
+  if(!el)return;
+  if(!pendInbound.length){el.innerHTML='<div style="color:var(--muted);font-family:var(--mono);font-size:10px;padding:12px 0;text-align:center">No pending</div>'; return;}
+  el.innerHTML=pendInbound.map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--bd2);font-size:11px"><div><div style="font-family:var(--mono);font-weight:600">SKU-${p.sku} ×${p.qty}</div><div style="font-size:9px;color:var(--muted);font-family:var(--mono)">→ ${p.slotId} · ${p.t}</div></div><span class="bdg bdg-warn">Pending</span></div>`).join('');
+}
+
+// ══ OUTBOUND ══
+function switchOutTab(tab){
+  document.getElementById('outtab-form').style.display=tab==='form'?'block':'none';
+  document.getElementById('outtab-visual').style.display=tab==='visual'?'block':'none';
+  document.getElementById('outtab-form-btn').classList.toggle('active',tab==='form');
+  document.getElementById('outtab-visual-btn').classList.toggle('active',tab==='visual');
+  if(tab==='visual') renderVPickRack();
+}
+function populateOutSku(){
+  const el=document.getElementById('out-sku'); if(!el)return;
+  el.innerHTML='<option value="">— Select SKU —</option>'+Object.keys(SKI).map(k=>`<option value="${k}">SKU-${k} · Zone ${SKI[k].zone} · ${countSku(k)} units</option>`).join('');
+  const sc=document.getElementById('out-scan-sku'); if(sc) sc.innerHTML='<option value="">— Scan barcode —</option>'+Object.keys(SKI).map(k=>`<option value="${k}">SKU-${k}</option>`).join('');
+}
+function outAvail(){
+  const sku=document.getElementById('out-sku')?.value;
+  const el=document.getElementById('out-avail'); if(!el)return;
+  if(!sku){el.textContent=''; return;}
+  const avail=countSku(sku); const d=SKI[sku];
+  const locs=Object.values(slots).filter(s=>s.sku===sku&&s.qty>0).sort((a,b)=>a.col-b.col).map(s=>`${s.id}(×${s.qty})`).join(', ');
+  el.innerHTML=`<div style="font-family:var(--mono);font-size:10px;line-height:1.6"><span style="color:${avail>0?'rgba(50,180,100,.9)':'rgba(220,80,60,.9)'}">Available: ${avail} units · Rack R-${d.rackNum} ${d.l}</span><br><span style="color:var(--dim)">${locs||'No stock'}</span></div>`;
+}
+function createOrder(customPicks=null,customSku=null,customQty=null){
+  const sku=customSku||document.getElementById('out-sku').value;
+  const qty=customQty||parseInt(document.getElementById('out-qty').value)||1;
+  const invRaw=document.getElementById('out-inv')?.value.trim();
+  if(!sku){showToast('Select a SKU'); return;}
+  if(activeOrder){showToast('Order already in progress'); return;}
+  const avail=countSku(sku);
+  if(avail<qty){showToast(`Insufficient stock — available: ${avail}`); return;}
+  let picks=customPicks;
+  if(!picks){
+    let rem=qty; picks=[];
+    Object.values(slots).filter(s=>s.sku===sku&&s.qty>0).sort((a,b)=>a.col-b.col).forEach(sl=>{
+      if(rem<=0)return; const take=Math.min(rem,sl.qty); picks.push({id:sl.id,qty:take}); rem-=take;
+    });
+  }
+  const oid=invRaw||('INV-'+nextOid++);
+  const ord={id:oid,sku,qty,picks,status:'picking',t:nowt()};
+  orders.unshift(ord); activeOrder=ord; ordTotal++;
+  picks.forEach(p=>{slots[p.id].status='retrieving';});
+  blinkSlots(sku);
+  setConveyor(SKI[sku].zone,true,`Retrieving SKU-${sku} ×${qty} from rack R-${SKI[sku].rackNum}`);
+  // Add to outbound kanban
+  const kbItem=kanbanItems.find(k=>k.sku===sku&&k.stage==='picking'&&k.dir==='out');
+  if(kbItem){kbItem.note=oid;kbItem.t=nowt();}
+  else addKbItem(sku,qty,'picking',oid,'out');
+  addLog('ERP',`${oid} — SKU-${sku} ×${qty} · conveyor dispatched (ขาออก)`);
+  renderOrdFeed(); renderOrdBadge(); showActiveOrder();
+  document.getElementById('out-scan-card').style.display='block';
+  if(document.getElementById('out-inv'))document.getElementById('out-inv').value='';
+  refreshAll();
+}
+function showActiveOrder(){
+  const el=document.getElementById('act-order-body'); if(!el||!activeOrder)return;
+  const color=zc(SKI[activeOrder.sku].zone);
+  el.innerHTML=`<div style="padding:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-family:var(--mono);font-size:15px;font-weight:600">${activeOrder.id}</span><span class="or-st st-pck">◆ Conveyor active</span></div>
+    <div class="info-row"><span class="info-key">SKU</span><span class="info-val" style="color:${color}">SKU-${activeOrder.sku}</span></div>
+    <div class="info-row"><span class="info-key">Qty</span><span class="info-val">${activeOrder.qty} units</span></div>
+    <div style="margin-top:8px;font-size:9px;font-family:var(--mono);color:var(--muted);margin-bottom:4px">Pick from (col1=front first)</div>
+    ${activeOrder.picks.map(p=>`<div style="font-family:var(--mono);font-size:9px;display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--bd2)"><span style="color:${color}">→ ${p.id}</span><span style="color:var(--dim)">col${slots[p.id]?.col||'?'} · ${p.qty}u</span></div>`).join('')}
+  </div>`;
+}
+function outScanConfirm(){
+  const scanned=document.getElementById('out-scan-sku').value;
+  if(!scanned){showToast('Scan or select a barcode'); return;}
+  if(!activeOrder){showToast('No active order'); return;}
+  if(scanned!==activeOrder.sku){
+    showToast(`WRONG ITEM — Expected SKU-${activeOrder.sku}, got SKU-${scanned}`);
+    addLog('ERR',`Mismatch on ${activeOrder.id} · Expected SKU-${activeOrder.sku}, got SKU-${scanned}`);
+    document.getElementById('out-scan-sku').value=''; return;
+  }
+  activeOrder.picks.forEach(p=>{
+    const nq=slots[p.id].qty-p.qty; slots[p.id].qty=nq;
+    if(nq<=0){slots[p.id].sku=null;slots[p.id].status='empty';slots[p.id].qty=0;}
+    else slots[p.id].status='occupied';
+  });
+  dispatched+=activeOrder.qty;
+  activeOrder.status='dispatched';
+  // Advance kanban: picking → qc_out
+  const kbItem=kanbanItems.find(k=>k.sku===activeOrder.sku&&k.stage==='picking'&&k.dir==='out');
+  if(kbItem){kbItem.stage='qc_out';kbItem.t=nowt();}
+  const oid=activeOrder.id,sku=activeOrder.sku,qty=activeOrder.qty;
+  setConveyor(SKI[sku].zone,false,'Idle');
+  clearBlinks();
+  addLog('OUT',`${oid} QC Check ขาออก ✓ · SKU-${sku} ×${qty}`);
+  activeOrder=null;
+  document.getElementById('out-scan-card').style.display='none';
+  document.getElementById('act-order-body').innerHTML='<div class="done-state"><div class="d-ic">✓</div><div class="d-t">QC Check ขาออก ผ่าน</div><div class="d-s">Kanban: QC Check ขาออก → Dispatched</div></div>';
+  setTimeout(()=>{document.getElementById('act-order-body').innerHTML='<div style="padding:18px;text-align:center;color:var(--muted)"><div style="font-size:10px;font-family:var(--mono)">No active retrieval</div></div>';},2500);
+  renderOrdFeed(); renderOrdBadge(); renderOrdHist(); refreshAll(); outAvail();
+}
+function renderOrdFeed(){
+  const el=document.getElementById('ofd'); if(!el)return;
+  const cnt=document.getElementById('ocnt');
+  const act=orders.filter(o=>o.status!=='dispatched').length;
+  if(cnt) cnt.textContent=act;
+  if(!orders.length){el.innerHTML='<div style="color:var(--muted);font-family:var(--mono);font-size:10px;padding:8px 0;text-align:center">No outbound orders yet</div>'; return;}
+  el.innerHTML=orders.slice(0,8).map(o=>`<div class="or-row"><div class="or-top"><span class="or-id">${o.id}</span><span class="or-st ${o.status==='dispatched'?'st-dsp':'st-pck'}">${o.status==='dispatched'?'✓ Done':'◆ Active'}</span></div><div class="or-d" style="color:${zc(SKI[o.sku].zone)}">SKU-${o.sku} ×${o.qty} · ${o.t}</div></div>`).join('');
+}
+function renderOrdBadge(){
+  const n=orders.filter(o=>o.status!=='dispatched').length;
+  const b=document.getElementById('ob-badge'); if(b){b.style.display=n>0?'inline':'none';b.textContent=n;}
+}
+function renderOrdHist(){
+  const el=document.getElementById('ord-hist'); if(!el)return;
+  if(!orders.length){el.innerHTML='<div style="color:var(--muted);font-family:var(--mono);font-size:10px;padding:12px 0;text-align:center">No orders yet</div>'; return;}
+  el.innerHTML=`<table><thead><tr><th>Order ID</th><th>SKU</th><th>Qty</th><th>Slots</th><th>Status</th><th>Time</th></tr></thead><tbody>${orders.slice().map(o=>`<tr><td style="font-weight:600">${o.id}</td><td style="color:${zc(SKI[o.sku].zone)}">SKU-${o.sku}</td><td>${o.qty}</td><td style="font-size:9px;color:var(--dim)">${o.picks.map(p=>p.id).join(', ')}</td><td>${o.status==='dispatched'?'<span class="bdg bdg-ok">Done</span>':'<span class="bdg bdg-warn">Active</span>'}</td><td style="color:var(--muted)">${o.t}</td></tr>`).join('')}</tbody></table>`;
+}
+
+// ── Visual Pick — เลือก Rack ──
+let vpickSelectedRack=null;
+function renderVPickRack(){
+  const el=document.getElementById('vpick-rack'); if(!el)return;
+  el.innerHTML=`<div style="font-size:9px;font-family:var(--mono);color:var(--muted);margin-bottom:8px">เลือก Rack ที่ต้องการหยิบของ (แสดงเฉพาะ Rack ที่มีของ)</div>`;
+  // Group by rack
+  const racksWithStock={};
+  Object.keys(SKI).forEach(sku=>{
+    const d=SKI[sku];
+    const stock=countSku(sku);
+    if(stock>0){
+      const rKey=`R-${d.rackNum}`;
+      if(!racksWithStock[rKey]) racksWithStock[rKey]={rackNum:d.rackNum,skus:[],zone:d.zone};
+      racksWithStock[rKey].skus.push({sku,stock,level:d.l});
+    }
+  });
+  if(!Object.keys(racksWithStock).length){
+    el.insertAdjacentHTML('beforeend','<div style="color:var(--dim);font-family:var(--mono);font-size:10px;text-align:center;padding:12px 0">No stock available</div>');
+    return;
+  }
+  Object.values(racksWithStock).sort((a,b)=>a.rackNum.localeCompare(b.rackNum)).forEach(rack=>{
+    const color=zc(rack.zone);
+    const isSelected=vpickSelectedRack===rack.rackNum;
+    const skuList=rack.skus.map(s=>`<span style="color:${zc(SKI[s.sku].zone)};font-family:var(--mono);font-size:9px">SKU-${s.sku} ×${s.stock}</span>`).join(' · ');
+    el.insertAdjacentHTML('beforeend',`<div class="vpick-rack-item${isSelected?' selected':''}" onclick="vpickSelectRack('${rack.rackNum}')">
+      <div style="width:32px;height:32px;border-radius:4px;background:${color.replace('1)','0.15)')};border:1px solid ${color.replace('1)','0.3)')};display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;font-weight:700;color:${color};flex-shrink:0">${rack.zone}</div>
+      <div class="vpick-rack-info">
+        <div class="vpick-rack-name">Rack R-${rack.rackNum}</div>
+        <div class="vpick-rack-detail">${skuList}</div>
+      </div>
+      <div class="vpick-rack-stock" style="color:${color}">${rack.skus.reduce((a,s)=>a+s.stock,0)} units</div>
+    </div>`);
+  });
+  renderVPickCart();
+}
+function vpickSelectRack(rackNum){
+  if(vpickSelectedRack===rackNum){
+    vpickSelectedRack=null;
+  } else {
+    vpickSelectedRack=rackNum;
+    // Auto-add the SKU from this rack to pick list
+    const skusInRack=Object.keys(SKI).filter(k=>SKI[k].rackNum===rackNum&&countSku(k)>0);
+    skusInRack.forEach(sku=>{
+      // Find front slot (col1 first)
+      const frontSlot=Object.values(slots).filter(s=>s.rackNum===rackNum&&s.sku===sku&&s.qty>0).sort((a,b)=>a.col-b.col)[0];
+      if(frontSlot&&!vpickItems.find(p=>p.slotId===frontSlot.id)){
+        vpickItems.push({slotId:frontSlot.id,sku,qty:1});
+      }
+    });
+  }
+  renderVPickRack();
+}
+function clearVPick(){vpickItems=[];vpickSelectedRack=null; renderVPickRack(); renderVPickCart();}
+function renderVPickCart(){
+  const el=document.getElementById('vpick-list'); const cnt=document.getElementById('vpick-count');
+  if(cnt) cnt.textContent=vpickItems.length+' item'+(vpickItems.length!==1?'s':'');
+  if(!el)return;
+  if(!vpickItems.length){el.innerHTML='<div style="color:var(--dim);font-family:var(--mono);font-size:10px;text-align:center;padding:6px 0">เลือก Rack ด้านบนเพื่อเพิ่มรายการ</div>'; return;}
+  el.innerHTML=vpickItems.map(p=>`<div class="vpick-item"><span>SKU-${p.sku} <span style="color:var(--dim)">from ${p.slotId}</span></span><div style="display:flex;align-items:center;gap:5px"><input type="number" value="${p.qty}" min="1" max="${slots[p.slotId]?.qty||1}" style="width:42px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:2px 5px;border-radius:3px;font-family:var(--mono);font-size:10px;outline:none" onchange="vpickSetQty('${p.slotId}',this.value)"><button onclick="vpickRemove('${p.slotId}')" style="background:none;border:none;color:var(--muted);cursor:pointer">✕</button></div></div>`).join('');
+}
+function vpickSetQty(sid,v){const p=vpickItems.find(x=>x.slotId===sid);if(p){p.qty=Math.min(parseInt(v)||1,slots[sid]?.qty||1);}}
+function vpickRemove(sid){vpickItems=vpickItems.filter(p=>p.slotId!==sid);renderVPickCart();}
+function dispatchVPick(){
+  if(!vpickItems.length){showToast('Pick list is empty');return;}
+  if(activeOrder){showToast('Order already in progress');return;}
+  const first=vpickItems[0];
+  const picks=vpickItems.filter(p=>p.sku===first.sku).map(p=>({id:p.slotId,qty:p.qty}));
+  const totalQty=picks.reduce((a,p)=>a+p.qty,0);
+  createOrder(picks,first.sku,totalQty);
+  vpickItems=[]; vpickSelectedRack=null; renderVPickCart(); switchOutTab('form');
+}
+
+// ══ CONVEYOR ══
+function setConveyor(zone,active,task){
+  conveyors[zone]={active,task};
+  addLog(active?'ERP':'SYS',`Conveyor Zone-${zone}: ${task}`);
+}
+function blinkSlots(sku){
+  clearBlinks();
+  Object.values(slots).filter(s=>s.sku===sku).forEach(s=>{blinkIds[s.id]=true;});
+}
+function clearBlinks(){blinkIds={};}
+
+// ══ INCIDENTS ══
+function selType(t){
+  incidentType=t;
+  ['dmg','lst','wrg','oth'].forEach(x=>{const b=document.getElementById('itype-'+x);if(b)b.className='itype-btn'+(x===t?' sel-'+x:'');});
+}
+function populateIncSku(){
+  const el=document.getElementById('inc-sku'); if(!el)return;
+  el.innerHTML='<option value="">— Select SKU —</option>'+Object.keys(SKI).map(k=>`<option value="${k}">SKU-${k} · ${countSku(k)} units</option>`).join('');
+}
+function submitIncident(){
+  const sku=document.getElementById('inc-sku').value;
+  const qty=parseInt(document.getElementById('inc-qty').value)||1;
+  const slotInput=document.getElementById('inc-slot').value.trim();
+  const note=document.getElementById('inc-note').value.trim();
+  if(!sku){showToast('Select a SKU'); return;}
+  let removed=0;
+  if(slotInput&&slots[slotInput]?.sku===sku){
+    const take=Math.min(qty,slots[slotInput].qty); slots[slotInput].qty-=take; removed=take;
+    if(slots[slotInput].qty<=0){slots[slotInput].sku=null;slots[slotInput].status='empty';slots[slotInput].qty=0;}
+  } else {
+    let rem=qty;
+    Object.values(slots).filter(s=>s.sku===sku&&s.qty>0).forEach(s=>{if(rem<=0)return;const take=Math.min(rem,s.qty);s.qty-=take;rem-=take;removed+=take;if(s.qty<=0){s.sku=null;s.status='empty';s.qty=0;}});
+  }
+  const iid='INC-'+String(incidents.length+1).padStart(4,'0');
+  incidents.push({id:iid,sku,qty:removed,type:incidentType,note,slot:slotInput||'auto',t:nowt(),closed:false});
+  addLog('ERR',`${iid} · SKU-${sku} ×${removed} — ${incidentType} · removed`);
+  showToast(`${iid} filed · ${removed} units removed`);
+  ['inc-note','inc-slot'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('inc-qty').value='1';
+  refreshAll(); renderIncHistory(); populateIncSku();
+}
+function renderIncHistory(){
+  const el=document.getElementById('inc-history'); const cnt=document.getElementById('inc-hist-cnt');
+  if(cnt) cnt.textContent=incidents.length;
+  if(!el)return;
+  if(!incidents.length){el.innerHTML='<div style="color:var(--muted);font-family:var(--mono);font-size:10px;padding:12px 0;text-align:center">No incidents</div>';return;}
+  const icons={dmg:'💥',lst:'🔍',wrg:'🔄',oth:'📝'};
+  const cls={dmg:'ii-dmg',lst:'ii-lst',wrg:'ii-wrg',oth:'ii-oth'};
+  const lbl={dmg:'Damaged',lst:'Lost',wrg:'Wrong Item',oth:'Other'};
+  el.innerHTML=incidents.slice().reverse().map(inc=>`<div class="inc-row">
+    <div class="inc-icon ${cls[inc.type]}">${icons[inc.type]}</div>
+    <div class="inc-body"><div class="inc-hd"><span class="inc-id">${inc.id}</span><span class="inc-ts">${inc.t}</span></div>
+    <div class="inc-detail">SKU-${inc.sku} · ${lbl[inc.type]} · ${inc.slot}</div>
+    ${inc.note?`<div class="inc-note">"${inc.note}"</div>`:''}
+    <div class="inc-removed">− ${inc.qty} unit(s) removed from inventory</div></div>
+  </div>`).join('');
+}
+
+// ══ INVENTORY ══
+function renderInv(){
+  const z=document.getElementById('iv-z')?.value;
+  const l=document.getElementById('iv-l')?.value;
+  const st=document.getElementById('iv-st')?.value;
+  const el=document.getElementById('iv-body'); const cnt=document.getElementById('iv-cnt');
+  if(!el)return;
+  let data=Object.values(slots).sort((a,b)=>a.id.localeCompare(b.id));
+  if(z) data=data.filter(s=>s.sku&&SKI[s.sku]?.zone===z);
+  if(l) data=data.filter(s=>s.level===l);
+  if(st) data=data.filter(s=>s.status===st);
+  if(cnt) cnt.textContent=data.length+' slots';
+  el.innerHTML=data.map(s=>{
+    const info=s.sku?SKI[s.sku]:null;
+    const color=info?zc(info.zone):'var(--muted)';
+    return`<tr>
+      <td style="font-weight:600;color:${color}">${s.id}</td>
+      <td>R-${s.rackNum}</td>
+      <td style="color:${s.level==='L2'?'rgba(60,130,220,.9)':'rgba(200,140,40,.9)'}">${s.level}</td>
+      <td>${s.col}</td>
+      <td style="font-weight:${s.sku?600:400};color:${s.sku?'var(--text)':'var(--dim)'}">${s.sku?`SKU-${s.sku}`:'—'}</td>
+      <td>${info?`<span class="bdg bdg-${info.cat}">${info.cat}</span>`:'—'}</td>
+      <td style="font-family:var(--mono)">${s.qty||0}</td>
+      <td style="color:var(--muted)">${info?info.w+' kg':'—'}</td>
+      <td>${s.status==='occupied'?'<span class="bdg bdg-ok">Occupied</span>':s.status==='retrieving'?'<span class="bdg bdg-warn">Retrieving</span>':'<span class="bdg bdg-off">Empty</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ══ CAMERA ══
+let camStream=null,camTarget=null,camFrame=null,camContext=null;
+const BMAP={'SKU-A':'A','SKU-H':'H','SKU-E':'E','SKU-F':'F','SKU-B':'B','SKU-D':'D','SKU-G':'G','SKU-C':'C','A':'A','H':'H','E':'E','F':'F','B':'B','D':'D','G':'G','C':'C'};
+function openCam(targetId,context='default'){
+  camTarget=targetId; camContext=context;
+  document.getElementById('cam-overlay').classList.add('open');
+  setCamStatus('Requesting camera…','');
+  const chips=document.getElementById('cam-chips');
+  chips.innerHTML=Object.keys(SKI).map(k=>`<div class="cam-chip" onclick="camSelect('${k}')" style="color:${zc(SKI[k].zone)}">SKU-${k}</div>`).join('');
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
+    .then(stream=>{
+      camStream=stream; const vid=document.getElementById('cam-video');
+      vid.srcObject=stream; vid.onloadedmetadata=()=>{vid.play();setCamStatus('Aim at QR code…','');startScanLoop();};
+    })
+    .catch(err=>setCamStatus(err.name==='NotAllowedError'?'Permission denied — use manual selection':'Camera error','err'));
+}
+function startScanLoop(){
+  const vid=document.getElementById('cam-video');const canvas=document.getElementById('cam-canvas');const ctx=canvas.getContext('2d');
+  function scan(){
+    if(!camStream)return;
+    if(vid.readyState===vid.HAVE_ENOUGH_DATA){
+      canvas.width=vid.videoWidth;canvas.height=vid.videoHeight;ctx.drawImage(vid,0,0);
+      const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+      const code=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+      if(code?.data){const raw=code.data.trim();const mapped=BMAP[raw]||BMAP[raw.toUpperCase()];if(mapped){setCamStatus('Found: SKU-'+mapped,'found');setTimeout(()=>camSelect(mapped),350);return;}else setCamStatus('Unknown: "'+raw+'"','err');}
+    }
+    camFrame=requestAnimationFrame(scan);
+  }
+  camFrame=requestAnimationFrame(scan);
+}
+function camSelect(sku){
+  closeCam();
+  const el=document.getElementById(camTarget); if(!el)return;
+  el.value=sku; el.dispatchEvent(new Event('change'));
+  if(camTarget==='in-sku') inSkuChange();
+  if(camContext==='outbound') outAvail();
+  if(camContext==='receiving'){/* handled by rcv buttons */}
+}
+function closeCam(){
+  if(camFrame){cancelAnimationFrame(camFrame);camFrame=null;}
+  if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}
+  document.getElementById('cam-video').srcObject=null;
+  document.getElementById('cam-overlay').classList.remove('open');
+  camTarget=null;
+}
+function camOverlayClick(e){if(e.target===document.getElementById('cam-overlay'))closeCam();}
+function setCamStatus(msg,cls){const el=document.getElementById('cam-status');if(!el)return;el.textContent=msg;el.className='cam-status'+(cls?' '+cls:'');}
+
+// ══ FULLSCREEN ══
+function toggleFS(){if(!document.fullscreenElement)document.documentElement.requestFullscreen?.();else document.exitFullscreen?.();}
+document.addEventListener('fullscreenchange',()=>{const b=document.querySelector('.fs-btn');if(b)b.textContent=document.fullscreenElement?'⛶ Exit':'⛶ Fullscreen';});
+
+// ══ INIT ══
+window.onload=function(){
+  initSlots();
+  populateInSku(); populateOutSku(); populateIncSku();
+  tick(); setInterval(tick,1000);
+  addLog('SYS','SmartWMS v6 · Straight Belt Layout · 20 racks · 200 slots · 8 SKUs');
+  addLog('SYS','Zone A (Fast) near exit (bottom) · Zone C (Slow) far from exit (top)');
+  addLog('SYS','Kanban ขาเข้า: Receiving→QC Check→Storing | ขาออก: Picking→QC Check ขาออก→Dispatched');
+  refreshAll();
+  // Render all pages immediately to fix slow UTI
+  renderStraightRack();
+  renderKanban();
+  renderIncHistory();
+  renderInv();
+  renderOrdHist();
+  // defer chart init to ensure canvas is visible and sized
+  requestAnimationFrame(()=>setTimeout(initCharts, 80));
+};
+</script>
+</body>
+</html>
